@@ -128,7 +128,7 @@ class BokehGraph(object):
         node_color="firebrick",
         palette=None,
         color_by=None,
-        line_color="navy",
+        edge_color="navy",
         edge_alpha=0.17,
         node_alpha=0.7,
         node_size=9,
@@ -149,7 +149,7 @@ class BokehGraph(object):
         figure.multi_line(
             "xs",
             "ys",
-            line_color=line_color,
+            line_color=edge_color,
             source=source_edges,
             alpha=edge_alpha,
         )
