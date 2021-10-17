@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "bokehgraph"
-version = "0.1.1"
+version = "0.1.2"
 description = "Interactive Graph visualization for networkX Graphs"
 authors = ["Lukas Erhard <luerhard@googlemail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.7"
 bokeh = "^2.4.1"
 networkx = "^2"
 
