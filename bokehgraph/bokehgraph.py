@@ -89,7 +89,7 @@ class BokehGraph(object):
 
         return val(names=names, xs=xs, ys=ys)
 
-    def layout(self, layout=None, shrink_factor=0.8, iterations=50, scale=1):
+    def layout(self, layout=None, shrink_factor=0.8, iterations=50, scale=1, seed=None):
         self._nodes = None
         self._edges = None
         if not layout:
@@ -98,6 +98,7 @@ class BokehGraph(object):
                 k=1 / (sqrt(self.graph.number_of_nodes() * shrink_factor)),
                 iterations=iterations,
                 scale=scale,
+                seed=seed
             )
         else:
             self._layout = layout
