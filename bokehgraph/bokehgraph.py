@@ -105,16 +105,15 @@ class BokehGraph(object):
 
     def prepare_figure(self):
         formatter = {tip: "printf" for tip, _ in self._tooltips}
-        hovertool = models.HoverTool(
+        self._hovertool = models.HoverTool(
             tooltips=self._tooltips,
             formatters=formatter,
-            names=["show_hover"],
         )
 
         fig = bokeh.plotting.figure(
             width=self.width,
             height=self.height,
-            tools=[hovertool, "box_zoom", "reset", "wheel_zoom", "pan"],
+            tools=[self._hovertool, "box_zoom", "reset", "wheel_zoom", "pan"],
         )
 
         fig.toolbar.logo = None
@@ -176,7 +175,7 @@ class BokehGraph(object):
             color = node_color
         source_nodes = bokeh.models.ColumnDataSource(self.node_properties)
 
-        figure.circle(
+        nodes = figure.circle(
             "xs",
             "ys",
             fill_color=color,
@@ -184,8 +183,9 @@ class BokehGraph(object):
             source=source_nodes,
             alpha=node_alpha,
             size=node_size,
-            name="show_hover",
         )
+
+        self._hovertool.renderers = [nodes]
 
         self.figure = figure
         self.show(self.figure)
