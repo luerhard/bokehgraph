@@ -32,11 +32,22 @@ class BokehGraph(object):
 
     """
 
-    def __init__(self, graph, width=800, height=600, inline=True):
+    def __init__(
+        self,
+        graph,
+        width=800,
+        height=600,
+        inline=True,
+        hover_nodes=True,
+        hover_edges=False,
+    ):
         self.graph = graph
 
         self.width = width
         self.height = height
+
+        self.hover_nodes = hover_nodes
+        self.hover_edges = hover_edges
 
         self._layout = None
         self._nodes = None
@@ -44,21 +55,28 @@ class BokehGraph(object):
 
         self.colormap = None
 
-        self._hovertool = None
         self.figure = None
+
+        self.node_properties = None
         self.node_attributes = sorted(
             {attr for _, data in self.graph.nodes(data=True) for attr in data},
         )
-        self.node_properties = None
-        self._tooltips = [("node", "@_node")]
+        self._node_tooltips = [("type", "node"), ("node", "@_node")]
         for attr in self.node_attributes:
-            self._tooltips.append((attr, f"@{attr}"))
+            self._node_tooltips.append((attr, f"@{attr}"))
+
+        self.edge_properties = None
+        self.edge_attributes = sorted(
+            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
+        )
+        self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
+        for attr in self.edge_attributes:
+            self._edge_tooltips.append((attr, f"@{attr}"))
 
         # inline for jupyter notebooks
         if inline:
             bokeh.io.output_notebook(hide_banner=True)
             self.show = lambda x: bokeh.plotting.show(x, notebook_handle=True)
-
         else:
             self.show = lambda x: bokeh.plotting.show(x)
 
@@ -104,16 +122,10 @@ class BokehGraph(object):
         return
 
     def prepare_figure(self):
-        formatter = {tip: "printf" for tip, _ in self._tooltips}
-        self._hovertool = models.HoverTool(
-            tooltips=self._tooltips,
-            formatters=formatter,
-        )
-
         fig = bokeh.plotting.figure(
             width=self.width,
             height=self.height,
-            tools=[self._hovertool, "box_zoom", "reset", "wheel_zoom", "pan"],
+            tools=["box_zoom", "reset", "wheel_zoom", "pan"],
         )
 
         fig.toolbar.logo = None
@@ -122,29 +134,27 @@ class BokehGraph(object):
         fig.ygrid.grid_line_color = None
         return fig
 
-    def render(
-        self,
-        node_color="firebrick",
-        palette=None,
-        color_by=None,
-        edge_color="navy",
-        edge_alpha=0.17,
-        node_alpha=0.7,
-        node_size=9,
-        max_colors=-1,
-    ):
-        if not self._nodes:
-            self._nodes = self.gen_node_coordinates()
+    def _render_edges(self, figure, edge_color, edge_alpha):
         if not self._edges:
             self._edges = self.gen_edge_coordinates()
 
-        figure = self.prepare_figure()
+        self.edge_properties = dict(
+            xs=self._edges.xs,
+            ys=self._edges.ys,
+        )
+
+        xs, ys = list(zip(*self.graph.edges()))
+        self.edge_properties["_u"] = xs
+        self.edge_properties["_v"] = ys
+        for attr in self.edge_attributes:
+            self.edge_properties[attr] = [
+                data[attr] for _, _, data in self.graph.edges(data=True)
+            ]
 
         # Draw Edges
-        source_edges = bokeh.models.ColumnDataSource(
-            dict(xs=self._edges.xs, ys=self._edges.ys)
-        )
-        figure.multi_line(
+        source_edges = bokeh.models.ColumnDataSource(self.edge_properties)
+
+        edges = figure.multi_line(
             "xs",
             "ys",
             line_color=edge_color,
@@ -152,7 +162,30 @@ class BokehGraph(object):
             alpha=edge_alpha,
         )
 
-        # Draw circles
+        if self.hover_edges:
+            formatter = {tip: "printf" for tip, _ in self._edge_tooltips}
+            hovertool = models.HoverTool(
+                tooltips=self._edge_tooltips,
+                formatters=formatter,
+                renderers=[edges],
+            )
+            figure.add_tools(hovertool)
+
+        return figure
+
+    def _render_nodes(
+        self,
+        figure,
+        node_alpha,
+        node_size,
+        node_color,
+        color_by,
+        palette,
+        max_colors,
+    ):
+        if not self._nodes:
+            self._nodes = self.gen_node_coordinates()
+
         self.node_properties = dict(
             xs=self._nodes.xs,
             ys=self._nodes.ys,
@@ -172,8 +205,8 @@ class BokehGraph(object):
             color = "_colormap"
         else:
             color = node_color
-        source_nodes = bokeh.models.ColumnDataSource(self.node_properties)
 
+        source_nodes = bokeh.models.ColumnDataSource(self.node_properties)
         nodes = figure.circle(
             "xs",
             "ys",
@@ -184,10 +217,43 @@ class BokehGraph(object):
             size=node_size,
         )
 
-        self._hovertool.renderers = [nodes]
-
+        if self.hover_nodes:
+            formatter = {tip: "printf" for tip, _ in self._node_tooltips}
+            hovertool = models.HoverTool(
+                tooltips=self._node_tooltips,
+                formatters=formatter,
+                renderers=[nodes],
+            )
+            figure.add_tools(hovertool)
         return figure
 
+    def render(
+        self,
+        node_color="firebrick",
+        palette=None,
+        color_by=None,
+        edge_color="navy",
+        edge_alpha=0.17,
+        node_alpha=0.7,
+        node_size=9,
+        max_colors=-1,
+    ):
+        figure = self.prepare_figure()
+        figure = self._render_nodes(
+            figure=figure,
+            node_alpha=node_alpha,
+            node_size=node_size,
+            max_colors=max_colors,
+            palette=palette,
+            color_by=color_by,
+            node_color=node_color,
+        )
+
+        figure = self._render_edges(
+            figure=figure, edge_color=edge_color, edge_alpha=edge_alpha
+        )
+
+        return figure
 
     def draw(
         self,
