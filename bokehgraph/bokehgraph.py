@@ -59,19 +59,21 @@ class BokehGraph(object):
 
         self.node_properties = None
         self.node_attributes = sorted(
-            {attr for _, data in self.graph.nodes(data=True) for attr in data},
-        )
-        self._node_tooltips = [("type", "node"), ("node", "@_node")]
-        for attr in self.node_attributes:
-            self._node_tooltips.append((attr, f"@{attr}"))
+                {attr for _, data in self.graph.nodes(data=True) for attr in data},
+            )
+        if self.hover_nodes:
+            self._node_tooltips = [("type", "node"), ("node", "@_node")]
+            for attr in self.node_attributes:
+                self._node_tooltips.append((attr, f"@{attr}"))
 
         self.edge_properties = None
-        self.edge_attributes = sorted(
-            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
-        )
-        self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
-        for attr in self.edge_attributes:
-            self._edge_tooltips.append((attr, f"@{attr}"))
+        if self.hover_edges:
+            self.edge_attributes = sorted(
+                {attr for _, _, data in self.graph.edges(data=True) for attr in data},
+            )
+            self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
+            for attr in self.edge_attributes:
+                self._edge_tooltips.append((attr, f"@{attr}"))
 
         # inline for jupyter notebooks
         if inline:
@@ -134,7 +136,7 @@ class BokehGraph(object):
         fig.ygrid.grid_line_color = None
         return fig
 
-    def _render_edges(self, figure, edge_color, edge_alpha):
+    def _render_edges(self, figure, edge_color, edge_alpha, edge_size):
         if not self._edges:
             self._edges = self.gen_edge_coordinates()
 
@@ -143,13 +145,14 @@ class BokehGraph(object):
             ys=self._edges.ys,
         )
 
-        xs, ys = list(zip(*self.graph.edges()))
-        self.edge_properties["_u"] = xs
-        self.edge_properties["_v"] = ys
-        for attr in self.edge_attributes:
-            self.edge_properties[attr] = [
-                data[attr] for _, _, data in self.graph.edges(data=True)
-            ]
+        if self.hover_edges:
+            xs, ys = list(zip(*self.graph.edges()))
+            self.edge_properties["_u"] = xs
+            self.edge_properties["_v"] = ys
+            for attr in self.edge_attributes:
+                self.edge_properties[attr] = [
+                    data[attr] for _, _, data in self.graph.edges(data=True)
+                ]
 
         # Draw Edges
         source_edges = bokeh.models.ColumnDataSource(self.edge_properties)
@@ -160,6 +163,7 @@ class BokehGraph(object):
             line_color=edge_color,
             source=source_edges,
             alpha=edge_alpha,
+            line_width=edge_size,
         )
 
         if self.hover_edges:
@@ -168,6 +172,7 @@ class BokehGraph(object):
                 tooltips=self._edge_tooltips,
                 formatters=formatter,
                 renderers=[edges],
+                line_policy="interp"
             )
             figure.add_tools(hovertool)
 
@@ -193,6 +198,8 @@ class BokehGraph(object):
         )
 
         for attr in self.node_attributes:
+            if not self.hover_nodes and attr != color_by:
+                continue
             self.node_properties[attr] = [
                 self.graph.nodes[n][attr] for n in self._nodes.names
             ]
@@ -223,6 +230,7 @@ class BokehGraph(object):
                 tooltips=self._node_tooltips,
                 formatters=formatter,
                 renderers=[nodes],
+                attachment="vertical"
             )
             figure.add_tools(hovertool)
         return figure
@@ -234,11 +242,20 @@ class BokehGraph(object):
         color_by=None,
         edge_color="navy",
         edge_alpha=0.17,
+        edge_size=1,
         node_alpha=0.7,
         node_size=9,
         max_colors=-1,
     ):
         figure = self.prepare_figure()
+
+        figure = self._render_edges(
+            figure=figure,
+            edge_color=edge_color,
+            edge_alpha=edge_alpha,
+            edge_size=edge_size,
+        )
+
         figure = self._render_nodes(
             figure=figure,
             node_alpha=node_alpha,
@@ -247,10 +264,6 @@ class BokehGraph(object):
             palette=palette,
             color_by=color_by,
             node_color=node_color,
-        )
-
-        figure = self._render_edges(
-            figure=figure, edge_color=edge_color, edge_alpha=edge_alpha
         )
 
         return figure
@@ -262,6 +275,7 @@ class BokehGraph(object):
         color_by=None,
         edge_color="navy",
         edge_alpha=0.17,
+        edge_size=1,
         node_alpha=0.7,
         node_size=9,
         max_colors=-1,
@@ -272,6 +286,7 @@ class BokehGraph(object):
             color_by=color_by,
             edge_color=edge_color,
             edge_alpha=edge_alpha,
+            edge_size=edge_size,
             node_alpha=node_alpha,
             node_size=node_size,
             max_colors=max_colors,
