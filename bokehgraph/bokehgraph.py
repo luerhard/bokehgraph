@@ -33,7 +33,6 @@ class BokehGraph(object):
     """
 
     def __init__(self, graph, width=800, height=600, inline=True):
-
         self.graph = graph
 
         self.width = width
@@ -98,7 +97,7 @@ class BokehGraph(object):
                 k=1 / (sqrt(self.graph.number_of_nodes() * shrink_factor)),
                 iterations=iterations,
                 scale=scale,
-                seed=seed
+                seed=seed,
             )
         else:
             self._layout = layout
@@ -123,7 +122,7 @@ class BokehGraph(object):
         fig.ygrid.grid_line_color = None
         return fig
 
-    def draw(
+    def render(
         self,
         node_color="firebrick",
         palette=None,
@@ -134,7 +133,6 @@ class BokehGraph(object):
         node_size=9,
         max_colors=-1,
     ):
-
         if not self._nodes:
             self._nodes = self.gen_node_coordinates()
         if not self._edges:
@@ -188,5 +186,28 @@ class BokehGraph(object):
 
         self._hovertool.renderers = [nodes]
 
-        self.figure = figure
-        self.show(self.figure)
+        return figure
+
+
+    def draw(
+        self,
+        node_color="firebrick",
+        palette=None,
+        color_by=None,
+        edge_color="navy",
+        edge_alpha=0.17,
+        node_alpha=0.7,
+        node_size=9,
+        max_colors=-1,
+    ):
+        figure = self.render(
+            node_color=node_color,
+            palette=palette,
+            color_by=color_by,
+            edge_color=edge_color,
+            edge_alpha=edge_alpha,
+            node_alpha=node_alpha,
+            node_size=node_size,
+            max_colors=max_colors,
+        )
+        self.show(figure)
