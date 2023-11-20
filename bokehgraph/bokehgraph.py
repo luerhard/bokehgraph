@@ -145,6 +145,7 @@ class BokehGraph(object):
             ys=self._edges.ys,
         )
 
+
         if self.hover_edges:
             xs, ys = list(zip(*self.graph.edges()))
             self.edge_properties["_u"] = xs
@@ -153,14 +154,24 @@ class BokehGraph(object):
                 self.edge_properties[attr] = [
                     data[attr] for _, _, data in self.graph.edges(data=True)
                 ]
-
+        
+        if True:
+            self.colormap = BokehGraphColorMap("Category20", 20)
+            self.edge_properties["_colormap"] = self.colormap.map(
+                self.edge_properties["betweenness"]
+            )
+            color = "_colormap"
+        else:
+            color = node_color
+        
         # Draw Edges
         source_edges = bokeh.models.ColumnDataSource(self.edge_properties)
+
 
         edges = figure.multi_line(
             "xs",
             "ys",
-            line_color=edge_color,
+            line_color="_colormap",
             source=source_edges,
             alpha=edge_alpha,
             line_width=edge_size,
