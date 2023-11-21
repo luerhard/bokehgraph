@@ -65,10 +65,10 @@ class BokehGraph(object):
                 self._node_tooltips.append((attr, f"@{attr}"))
 
         self.edge_properties = None
-        if self.hover_edges:
-            self.edge_attributes = sorted(
+        self.edge_attributes = sorted(
                 {attr for _, _, data in self.graph.edges(data=True) for attr in data},
             )
+        if self.hover_edges:
             self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
             for attr in self.edge_attributes:
                 self._edge_tooltips.append((attr, f"@{attr}"))
