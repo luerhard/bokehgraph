@@ -69,6 +69,13 @@ class BokehGraphColorMap:
     def create_palette(self):
         if self.palette_name.endswith("256"):
             palette = bokeh.palettes.all_palettes[self.palette_name]
+        elif self.palette_name == "numeric":
+            palette = []
+            i = 0
+            step = 1 / self.max_colors
+            for _ in range(self.max_colors):
+                i += step
+                palette.append(i)
         elif self.palette_name == "random":
             palette = [
                 RGB(

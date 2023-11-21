@@ -53,14 +53,12 @@ class BokehGraph(object):
         self._nodes = None
         self._edges = None
 
-        self.colormap = None
-
         self.figure = None
 
         self.node_properties = None
         self.node_attributes = sorted(
-                {attr for _, data in self.graph.nodes(data=True) for attr in data},
-            )
+            {attr for _, data in self.graph.nodes(data=True) for attr in data},
+        )
         if self.hover_nodes:
             self._node_tooltips = [("type", "node"), ("node", "@_node")]
             for attr in self.node_attributes:
@@ -136,7 +134,15 @@ class BokehGraph(object):
         fig.ygrid.grid_line_color = None
         return fig
 
-    def _render_edges(self, figure, edge_color, edge_alpha, edge_size):
+    def _render_edges(
+        self,
+        figure,
+        edge_color,
+        edge_palette,
+        edge_size,
+        edge_alpha,
+        max_colors,
+    ):
         if not self._edges:
             self._edges = self.gen_edge_coordinates()
 
@@ -144,7 +150,6 @@ class BokehGraph(object):
             xs=self._edges.xs,
             ys=self._edges.ys,
         )
-
 
         if self.hover_edges:
             xs, ys = list(zip(*self.graph.edges()))
@@ -154,24 +159,29 @@ class BokehGraph(object):
                 self.edge_properties[attr] = [
                     data[attr] for _, _, data in self.graph.edges(data=True)
                 ]
-        
-        if True:
-            self.colormap = BokehGraphColorMap("Category20", 20)
-            self.edge_properties["_colormap"] = self.colormap.map(
+
+        # Set edge color; potentially based on attribute
+        if edge_color in self.edge_attributes:
+            colormap = BokehGraphColorMap(edge_palette, max_colors)
+            self.edge_properties["_colormap"] = colormap.map(
                 self.edge_properties["betweenness"]
             )
             color = "_colormap"
         else:
-            color = node_color
-        
+            color = edge_color
+
+        # Set edge size; potentially based on attribute
+        if edge_size in self.edge_attributes:
+            pass
+            
+
         # Draw Edges
         source_edges = bokeh.models.ColumnDataSource(self.edge_properties)
-
 
         edges = figure.multi_line(
             "xs",
             "ys",
-            line_color="_colormap",
+            line_color=color,
             source=source_edges,
             alpha=edge_alpha,
             line_width=edge_size,
@@ -183,7 +193,7 @@ class BokehGraph(object):
                 tooltips=self._edge_tooltips,
                 formatters=formatter,
                 renderers=[edges],
-                line_policy="interp"
+                line_policy="interp",
             )
             figure.add_tools(hovertool)
 
@@ -195,8 +205,7 @@ class BokehGraph(object):
         node_alpha,
         node_size,
         node_color,
-        color_by,
-        palette,
+        node_palette,
         max_colors,
     ):
         if not self._nodes:
@@ -208,17 +217,18 @@ class BokehGraph(object):
             _node=self._nodes.names,
         )
 
+        # Color the nodes
         for attr in self.node_attributes:
-            if not self.hover_nodes and attr != color_by:
+            if not self.hover_nodes and attr != node_color:
                 continue
             self.node_properties[attr] = [
                 self.graph.nodes[n][attr] for n in self._nodes.names
             ]
 
-        if color_by and palette:
-            self.colormap = BokehGraphColorMap(palette, max_colors)
-            self.node_properties["_colormap"] = self.colormap.map(
-                self.node_properties[color_by]
+        if node_color in self.node_attributes:
+            colormap = BokehGraphColorMap(node_palette, max_colors)
+            self.node_properties["_colormap"] = colormap.map(
+                self.node_properties[node_color]
             )
             color = "_colormap"
         else:
@@ -241,40 +251,41 @@ class BokehGraph(object):
                 tooltips=self._node_tooltips,
                 formatters=formatter,
                 renderers=[nodes],
-                attachment="vertical"
+                attachment="vertical",
             )
             figure.add_tools(hovertool)
         return figure
 
     def render(
         self,
-        node_color="firebrick",
-        palette=None,
-        color_by=None,
-        edge_color="navy",
-        edge_alpha=0.17,
-        edge_size=1,
-        node_alpha=0.7,
-        node_size=9,
-        max_colors=-1,
+        node_color,
+        node_palette,
+        node_size,
+        node_alpha,
+        edge_color,
+        edge_palette,
+        edge_size,
+        edge_alpha,
+        max_colors,
     ):
         figure = self.prepare_figure()
 
         figure = self._render_edges(
             figure=figure,
             edge_color=edge_color,
+            edge_palette=edge_palette,
             edge_alpha=edge_alpha,
             edge_size=edge_size,
+            max_colors=max_colors,
         )
 
         figure = self._render_nodes(
             figure=figure,
-            node_alpha=node_alpha,
-            node_size=node_size,
-            max_colors=max_colors,
-            palette=palette,
-            color_by=color_by,
             node_color=node_color,
+            node_palette=node_palette,
+            node_size=node_size,
+            node_alpha=node_alpha,
+            max_colors=max_colors,
         )
 
         return figure
@@ -282,24 +293,24 @@ class BokehGraph(object):
     def draw(
         self,
         node_color="firebrick",
-        palette=None,
-        color_by=None,
-        edge_color="navy",
-        edge_alpha=0.17,
-        edge_size=1,
-        node_alpha=0.7,
+        node_palette="Category20",
         node_size=9,
+        node_alpha=0.7,
+        edge_color="navy",
+        edge_palette="viridis",
+        edge_alpha=0.3,
+        edge_size=1,
         max_colors=-1,
     ):
         figure = self.render(
             node_color=node_color,
-            palette=palette,
-            color_by=color_by,
-            edge_color=edge_color,
-            edge_alpha=edge_alpha,
-            edge_size=edge_size,
-            node_alpha=node_alpha,
+            node_palette=node_palette,
             node_size=node_size,
+            node_alpha=node_alpha,
+            edge_color=edge_color,
+            edge_palette=edge_palette,
+            edge_size=edge_size,
+            edge_alpha=edge_alpha,
             max_colors=max_colors,
         )
         self.show(figure)
