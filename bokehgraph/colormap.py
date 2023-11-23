@@ -36,7 +36,7 @@ class BokehGraphColorMap:
     def __init__(self, palette, max_colors=-1):
         self.palette_name = palette
 
-        if max_colors > 256:
+        if max_colors > 256 and self.palette_name != "numeric":
             raise BokehGraphColorMapException("Max number of colors is 256 !")
         self.max_colors = max_colors
         self.anchors = None
@@ -130,7 +130,7 @@ class BokehGraphColorMap:
             else:
                 self.max_colors = n_categories
                 color_map_values = color_attribute
-        elif n_categories < 257:
+        elif n_categories < 257 or self.palette_name == "numeric":
             self.max_colors = n_categories
             color_map_values = color_attribute
         else:
