@@ -43,7 +43,7 @@ jobs:
 
       - name: Publish to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.TESTPYPI_TOKEN }}
+          POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TESTPYPI_TOKEN }}
         run: |
-          poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry publish -r test-pypi
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
+          poetry publish -n -r testpypi
