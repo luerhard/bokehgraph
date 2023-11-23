@@ -164,16 +164,21 @@ class BokehGraph(object):
         if edge_color in self.edge_attributes:
             colormap = BokehGraphColorMap(edge_palette, max_colors)
             self.edge_properties["_colormap"] = colormap.map(
-                self.edge_properties["betweenness"]
+                self.edge_properties[edge_color]
             )
             color = "_colormap"
         else:
             color = edge_color
 
         # Set edge size; potentially based on attribute
-        if edge_size in self.edge_attributes:
-            pass
-            
+        if edge_alpha in self.edge_attributes:
+            colormap = BokehGraphColorMap("numeric", max_colors)
+            self.edge_properties["_edge_alpha"] = colormap.map(
+                self.edge_properties[edge_alpha]
+            )
+            alpha = "_edge_alpha"
+        else:
+            alpha = edge_alpha
 
         # Draw Edges
         source_edges = bokeh.models.ColumnDataSource(self.edge_properties)
@@ -183,7 +188,7 @@ class BokehGraph(object):
             "ys",
             line_color=color,
             source=source_edges,
-            alpha=edge_alpha,
+            alpha=alpha,
             line_width=edge_size,
         )
 
