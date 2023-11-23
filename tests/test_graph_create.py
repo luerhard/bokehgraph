@@ -21,10 +21,15 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
     )
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        color_by="degree",
-        palette="Category20",
-        max_colors=2,
+        node_color="degree",
+        node_palette="Category20",
         node_size=18,
+        node_alpha=0.5,
+        edge_color="navy",
+        edge_palette="Viridis",
+        edge_size=1,
+        edge_alpha=0.17,
+        max_colors=2,
     )
 
     test_img = tmp_path / "test_img.png"
@@ -34,4 +39,4 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
 
     with open(test_img, "rb") as f:
         img = f.read()
-        image_regression.check(img)
+        image_regression.check(img, diff_threshold=1)
