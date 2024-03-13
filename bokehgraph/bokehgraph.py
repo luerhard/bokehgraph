@@ -151,14 +151,14 @@ class BokehGraph(object):
             ys=self._edges.ys,
         )
 
-        if self.hover_edges:
-            xs, ys = list(zip(*self.graph.edges()))
-            self.edge_properties["_u"] = xs
-            self.edge_properties["_v"] = ys
-            for attr in self.edge_attributes:
-                self.edge_properties[attr] = [
-                    data[attr] for _, _, data in self.graph.edges(data=True)
-                ]
+        # if self.hover_edges:
+        xs, ys = list(zip(*self.graph.edges()))
+        self.edge_properties["_u"] = xs
+        self.edge_properties["_v"] = ys
+        for attr in self.edge_attributes:
+            self.edge_properties[attr] = [
+                data[attr] for _, _, data in self.graph.edges(data=True)
+            ]
 
         # Set edge color; potentially based on attribute
         if edge_color in self.edge_attributes:
