@@ -49,7 +49,7 @@ class BokehGraphColorMap:
 
     @staticmethod
     def _color_map(categories, palette):
-        return {group: color for group, color in zip(categories, palette)}
+        return {group: color for group, color in zip(sorted(categories), palette)}
 
     @staticmethod
     def _map_dict_to_iterable(d, iterable):

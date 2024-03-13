@@ -40,3 +40,45 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
     with open(test_img, "rb") as f:
         img = f.read()
         image_regression.check(img, diff_threshold=1)
+
+
+@pytest.mark.parametrize(
+    "edges",
+    [
+        ((1, 2, {"weight": 1}), (2, 3, {"weight": 5}), (3, 1, {"weight": 10})),
+        ((1, 2, {"weight": 10}), (2, 3, {"weight": 5}), (3, 1, {"weight": 1})),
+        ((1, 2, {"weight": 5}), (2, 3, {"weight": 50}), (3, 1, {"weight": 1})),
+        (
+            (1, 2, {"weight": 5}),
+            (2, 3, {"weight": 50}),
+            (3, 1, {"weight": 1}),
+            (4, 1, {"weight": 7}),
+        ),
+    ],
+)
+def test_edge_alpha_ordering(edges):
+    graph = nx.Graph()
+
+    for u, v, attrs in edges:
+        graph.add_edge(u, v, **attrs)
+
+    plot = BokehGraph(graph, hover_edges=True)
+
+    figure = plot.render(
+        node_size="age",
+        node_palette="viridis",
+        node_alpha=0.9,
+        node_color="age",
+        edge_size=15,
+        edge_color="navy",
+        max_colors=256,
+        edge_palette="numeric",
+        edge_alpha="weight",
+    )
+    edge_data = figure.renderers[0].data_source.data
+    sorted_weights = sorted(edge_data["weight"])
+    sorted_alphas = sorted(edge_data["_edge_alpha"])
+    rank_weights = [sorted_weights.index(i) for i in edge_data["weight"]]
+    rank_alphas = [sorted_alphas.index(i) for i in edge_data["_edge_alpha"]]
+
+    assert rank_weights == rank_alphas
