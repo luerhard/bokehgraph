@@ -35,7 +35,13 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
     test_img = tmp_path / "test_img.png"
     # for this to work, geckodriver or chromedriver have to be installed since
     # selenium is used for png export by bokeh
-    export_png(figure, filename=test_img)
+    from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
+
+    options = Options()
+    options.add_argument("-headless") 
+    with webdriver.Firefox(options=options) as driver:
+        export_png(figure, webdriver=driver, filename=test_img)
 
     with open(test_img, "rb") as f:
         img = f.read()
