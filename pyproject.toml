@@ -14,10 +14,10 @@ networkx = ">=2"
 numpy = [{version = ">=1.7", python = "<3.12"}, {version = ">=1.26", python = ">=3.12"}]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4"
-ipykernel = "^6.26.0"
-selenium = "^4.15.2"
-pillow = "^10.1.0"
+pytest = ">=7.4"
+ipykernel = ">=6.26.0"
+selenium = ">=4.15.2"
+pillow = ">=10.1.0"
 pytest-regressions = "2.5.0"
 
 [tool.flake8]
