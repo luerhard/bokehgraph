@@ -88,3 +88,25 @@ def test_edge_alpha_ordering(edges):
     rank_alphas = [sorted_alphas.index(i) for i in edge_data["_edge_alpha"]]
 
     assert rank_weights == rank_alphas
+
+def test_graph_without_edges():
+    graph = nx.Graph()
+    graph.add_node(1)
+    graph.add_node(2)
+
+    plot = BokehGraph(graph, hover_edges=True)
+    figure = plot.render(
+        node_size="age",
+        node_palette="viridis",
+        node_alpha=0.9,
+        node_color="age",
+        edge_size=15,
+        edge_color="navy",
+        max_colors=256,
+        edge_palette="numeric",
+        edge_alpha="weight",
+    )
+    edge_data = figure.renderers[0].data_source.data
+    node_data = figure.renderers[1].data_source.data
+    assert len(edge_data["xs"]) == 0
+    assert len(node_data["xs"]) == 2

@@ -151,10 +151,14 @@ class BokehGraph(object):
             ys=self._edges.ys,
         )
 
-        # if self.hover_edges:
-        xs, ys = list(zip(*self.graph.edges()))
-        self.edge_properties["_u"] = xs
-        self.edge_properties["_v"] = ys
+        try:
+            xs, ys = list(zip(*self.graph.edges()))
+            self.edge_properties["_u"] = xs
+            self.edge_properties["_v"] = ys
+        except ValueError:
+            # happens if the network has no edges
+            pass
+
         for attr in self.edge_attributes:
             self.edge_properties[attr] = [
                 data[attr] for _, _, data in self.graph.edges(data=True)
