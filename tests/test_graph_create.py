@@ -1,9 +1,8 @@
+from bokeh.io import export_png
 import networkx as nx
 import pytest
-from bokeh.io import export_png
 
 from bokehgraph import BokehGraph
-
 
 @pytest.mark.parametrize("hover_nodes", [True, False])
 @pytest.mark.parametrize("hover_edges", [True, False])
@@ -39,7 +38,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
     from selenium.webdriver.firefox.options import Options
 
     options = Options()
-    options.add_argument("-headless") 
+    options.add_argument("-headless")
     with webdriver.Firefox(options=options) as driver:
         export_png(figure, webdriver=driver, filename=test_img)
 

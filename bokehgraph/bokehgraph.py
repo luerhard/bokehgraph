@@ -1,18 +1,16 @@
 from collections import namedtuple
 from math import sqrt
 
+from bokeh import models
 import bokeh.io
 import bokeh.plotting
 import networkx as nx
-from bokeh import models
 
 from .colormap import BokehGraphColorMap
 
-
-class BokehGraph(object):
-    """
-    This is instanciated with a (one-mode) networkx graph object with
-    BokehGraph(nx.Graph())
+class BokehGraph:
+    """This is instanciated with a (one-mode) networkx graph object with
+    BokehGraph(nx.Graph()).
 
     working example:
     import networkx as nx
@@ -63,7 +61,7 @@ class BokehGraph(object):
         self.node_properties_lv0 = None
         self.node_properties_lv1 = None
 
-        
+
         if self.bipartite:
             # lvl 0 set
             self.node_attributes_lv0 = sorted(
@@ -96,7 +94,7 @@ class BokehGraph(object):
         self.edge_properties = None
         self.edge_attributes = sorted(
                 {attr for _, _, data in self.graph.edges(data=True) for attr in data},
-            )
+        )
         if self.hover_edges:
             self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
             for attr in self.edge_attributes:
@@ -150,7 +148,7 @@ class BokehGraph(object):
                 self.graph,
                 (node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 1),
                 align="vertical",
-                )
+            )
         else:
             self._layout = layout
         return
@@ -180,10 +178,10 @@ class BokehGraph(object):
         if not self._edges:
             self._edges = self.gen_edge_coordinates()
 
-        self.edge_properties = dict(
-            xs=self._edges.xs,
-            ys=self._edges.ys,
-        )
+        self.edge_properties = {
+            "xs": self._edges.xs,
+            "ys": self._edges.ys,
+        }
 
         try:
             xs, ys = list(zip(*self.graph.edges()))
@@ -202,7 +200,7 @@ class BokehGraph(object):
         if edge_color in self.edge_attributes:
             colormap = BokehGraphColorMap(edge_palette, max_colors)
             self.edge_properties["_colormap"] = colormap.map(
-                self.edge_properties[edge_color]
+                self.edge_properties[edge_color],
             )
             color = "_colormap"
         else:
@@ -212,7 +210,7 @@ class BokehGraph(object):
         if edge_alpha in self.edge_attributes:
             colormap = BokehGraphColorMap("numeric", max_colors)
             self.edge_properties["_edge_alpha"] = colormap.map(
-                self.edge_properties[edge_alpha]
+                self.edge_properties[edge_alpha],
             )
             alpha = "_edge_alpha"
         else:
@@ -256,8 +254,8 @@ class BokehGraph(object):
 
         if self.bipartite:
             nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
-            self.node_properties_lv0 = dict(xs=[], ys=[], names=[])
-            self.node_properties_lv1 = dict(xs=[], ys=[], names=[])
+            self.node_properties_lv0 = {"xs": [], "ys": [], "names": []}
+            self.node_properties_lv1 = {"xs": [], "ys": [], "names": []}
 
             for node in self._nodes:
                 if node.name in nodes_lv0:
@@ -271,11 +269,11 @@ class BokehGraph(object):
             xs = [node.x for node in self._nodes]
             ys = [node.y for node in self._nodes]
             nodes_lv0 = [node.name for node in self._nodes]
-            self.node_properties_lv0 = dict(
-                xs=xs,
-                ys=ys,
-                _node=nodes_lv0,
-            )
+            self.node_properties_lv0 = {
+                "xs": xs,
+                "ys": ys,
+                "_node": nodes_lv0,
+            }
 
         nodes = self.graph.nodes
 
@@ -297,7 +295,7 @@ class BokehGraph(object):
         if node_color in self.node_attributes_lv0:
             colormap = BokehGraphColorMap(node_palette, max_colors)
             self.node_properties_lv0["_colormap"] = colormap.map(
-                self.node_properties_lv0[node_color]
+                self.node_properties_lv0[node_color],
             )
             color = "_colormap"
         else:
@@ -306,7 +304,7 @@ class BokehGraph(object):
             if node_color in self.node_attributes_lv1:
                 colormap = BokehGraphColorMap(node_palette, max_colors)
                 self.node_properties_lv1["_colormap"] = colormap.map(
-                    self.node_properties_lv1[node_color]
+                    self.node_properties_lv1[node_color],
                 )
                 color = "_colormap"
             else:
