@@ -145,7 +145,7 @@ def test_graph_bipartite(tmp_path, image_regression):
         edge_alpha=0.5,
         node_alpha=0.9,
         node_color="firebrick",
-        edge_color="nayv",
+        edge_color="navy",
         max_colors=2,
     )
 
