@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from bokeh.io import export_png
 import networkx as nx
 import pytest
@@ -42,7 +44,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
     with webdriver.Firefox(options=options) as driver:
         export_png(figure, webdriver=driver, filename=test_img)
 
-    with open(test_img, "rb") as f:
+    with Path(test_img).open("rb") as f:
         img = f.read()
         image_regression.check(img, diff_threshold=1)
 
