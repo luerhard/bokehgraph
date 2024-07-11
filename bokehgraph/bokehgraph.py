@@ -71,8 +71,10 @@ class BokehGraph:
                 },
             )
             if self.hover_nodes:
-                self._node_tooltips_lv0 = [("type", "node"), ("node", "@_node")]
+                self._node_tooltips_lv0 = [("type", "node lv0"), ("node", "@_node")]
                 for attr in self.node_attributes_lv0:
+                    if attr == "bipartite":
+                        continue
                     self._node_tooltips_lv0.append((attr, f"@{attr}"))
 
             # lvl 1 set
@@ -85,8 +87,10 @@ class BokehGraph:
                 },
             )
             if self.hover_nodes:
-                self._node_tooltips_lv1 = [("type", "node"), ("node", "@_node")]
+                self._node_tooltips_lv1 = [("type", "node lv1"), ("node", "@_node")]
                 for attr in self.node_attributes_lv1:
+                    if attr == "bipartite":
+                        continue
                     self._node_tooltips_lv1.append((attr, f"@{attr}"))
         else:
             # lvl 0 set
@@ -96,6 +100,8 @@ class BokehGraph:
             if self.hover_nodes:
                 self._node_tooltips_lv0 = [("type", "node"), ("node", "@_node")]
                 for attr in self.node_attributes_lv0:
+                    if attr == "bipartite":
+                        continue
                     self._node_tooltips_lv0.append((attr, f"@{attr}"))
 
         self.edge_properties = None
@@ -164,8 +170,8 @@ class BokehGraph:
         elif not layout and self.bipartite:
             self._layout = nx.bipartite_layout(
                 self.graph,
-                (node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 1),
-                align="vertical",
+                (node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 0),
+                align="horizontal",
             )
         else:
             self._layout = layout
@@ -270,8 +276,8 @@ class BokehGraph:
 
         if self.bipartite:
             nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
-            self.node_properties_lv0 = {"xs": [], "ys": [], "names": []}
-            self.node_properties_lv1 = {"xs": [], "ys": [], "names": []}
+            self.node_properties_lv0 = {"xs": [], "ys": [], "_node": []}
+            self.node_properties_lv1 = {"xs": [], "ys": [], "_node": []}
 
             for node in self._nodes:
                 if node.name in nodes_lv0:
@@ -280,7 +286,7 @@ class BokehGraph:
                     target_dict = self.node_properties_lv1
                 target_dict["xs"].append(node.x)
                 target_dict["ys"].append(node.y)
-                target_dict["names"].append(node.name)
+                target_dict["_node"].append(node.name)
         else:
             xs = [node.x for node in self._nodes]
             ys = [node.y for node in self._nodes]
@@ -298,6 +304,7 @@ class BokehGraph:
             if not self.hover_nodes and attr != node_color:
                 continue
             self.node_properties_lv0[attr] = [nodes[n][attr] for n in nodes_lv0]
+
         if self.bipartite:
             for attr in self.node_attributes_lv1:
                 if not self.hover_nodes and attr != node_color:
@@ -312,6 +319,7 @@ class BokehGraph:
             color = "_colormap"
         else:
             color = node_color
+
         if self.bipartite:
             if node_color in self.node_attributes_lv1:
                 colormap = BokehGraphColorMap(node_palette, max_colors)
