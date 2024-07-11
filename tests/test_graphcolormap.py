@@ -1,8 +1,7 @@
 import pytest
 
 from bokehgraph.colormap import BokehGraphColorMap
-from bokehgraph.colormap import BokehGraphColorMapException
-
+from bokehgraph.colormap import BokehGraphColorMapError
 
 def test_simple_two_color():
     colormap = BokehGraphColorMap("viridis", max_colors=2)
@@ -22,8 +21,8 @@ def test_max_colors_255():
 
 
 def test_max_colors_256():
-    with pytest.raises(BokehGraphColorMapException):
-        colormap = BokehGraphColorMap("viridis", max_colors=257)
+    with pytest.raises(BokehGraphColorMapError):
+        BokehGraphColorMap("viridis", max_colors=257)
 
 
 def test_numeric():
