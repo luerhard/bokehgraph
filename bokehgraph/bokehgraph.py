@@ -9,8 +9,7 @@ import networkx as nx
 from .colormap import BokehGraphColorMap
 
 class BokehGraph:
-    """This is instanciated with a (one-mode) networkx graph object with
-    BokehGraph(nx.Graph()).
+    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
 
     working example:
     import networkx as nx
@@ -61,11 +60,15 @@ class BokehGraph:
         self.node_properties_lv0 = None
         self.node_properties_lv1 = None
 
-
         if self.bipartite:
             # lvl 0 set
             self.node_attributes_lv0 = sorted(
-                {attr for _, data in self.graph.nodes(data=True) if data["bipartite"] == 0 for attr in data},
+                {
+                    attr
+                    for _, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == 0
+                    for attr in data
+                },
             )
             if self.hover_nodes:
                 self._node_tooltips_lv0 = [("type", "node"), ("node", "@_node")]
@@ -74,7 +77,12 @@ class BokehGraph:
 
             # lvl 1 set
             self.node_attributes_lv1 = sorted(
-                {attr for _, data in self.graph.nodes(data=True) if data["bipartite"] == 1 for attr in data},
+                {
+                    attr
+                    for _, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == 1
+                    for attr in data
+                },
             )
             if self.hover_nodes:
                 self._node_tooltips_lv1 = [("type", "node"), ("node", "@_node")]
@@ -90,10 +98,9 @@ class BokehGraph:
                 for attr in self.node_attributes_lv0:
                     self._node_tooltips_lv0.append((attr, f"@{attr}"))
 
-
         self.edge_properties = None
         self.edge_attributes = sorted(
-                {attr for _, _, data in self.graph.edges(data=True) for attr in data},
+            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
         )
         if self.hover_edges:
             self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
@@ -107,7 +114,7 @@ class BokehGraph:
         else:
             self.show = lambda x: bokeh.plotting.show(x)
 
-    def gen_edge_coordinates(self):
+    def _gen_edge_coordinates(self):
         if not self._layout:
             self.layout()
 
@@ -123,7 +130,7 @@ class BokehGraph:
 
         return val(xs=xs, ys=ys)
 
-    def gen_node_coordinates(self):
+    def _gen_node_coordinates(self):
         if not self._layout:
             self.layout()
 
@@ -133,6 +140,17 @@ class BokehGraph:
         return [node(name, x, y) for name, (x, y) in zip(names, coords)]
 
     def layout(self, layout=None, shrink_factor=0.8, iterations=50, scale=1, seed=None):
+        """Set a networkX layout for the plot.
+
+        Args:
+            layout (networkX Layout, optional): Custom layout. Defaults to None which represents
+                nx.spring_layout for non-bipartite graphs and nx.bipartite_layout for bipartite
+                graphs.
+            shrink_factor (float, optional): Modifies spring-layout. Defaults to 0.8.
+            iterations (int, optional): Modifies spring-layout. Defaults to 50.
+            scale (int, optional): Modifies spring-layout. Defaults to 1.
+            seed (int, optional): Modifies spring-layout. Defaults to None.
+        """
         self._nodes = None
         self._edges = None
         if not layout and not self.bipartite:
@@ -153,7 +171,7 @@ class BokehGraph:
             self._layout = layout
         return
 
-    def prepare_figure(self):
+    def _prepare_figure(self):
         fig = bokeh.plotting.figure(
             width=self.width,
             height=self.height,
@@ -176,7 +194,7 @@ class BokehGraph:
         max_colors,
     ):
         if not self._edges:
-            self._edges = self.gen_edge_coordinates()
+            self._edges = self._gen_edge_coordinates()
 
         self.edge_properties = {
             "xs": self._edges.xs,
@@ -192,9 +210,7 @@ class BokehGraph:
             pass
 
         for attr in self.edge_attributes:
-            self.edge_properties[attr] = [
-                data[attr] for _, _, data in self.graph.edges(data=True)
-            ]
+            self.edge_properties[attr] = [data[attr] for _, _, data in self.graph.edges(data=True)]
 
         # Set edge color; potentially based on attribute
         if edge_color in self.edge_attributes:
@@ -250,7 +266,7 @@ class BokehGraph:
         max_colors,
     ):
         if not self._nodes:
-            self._nodes = self.gen_node_coordinates()
+            self._nodes = self._gen_node_coordinates()
 
         if self.bipartite:
             nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
@@ -281,16 +297,12 @@ class BokehGraph:
         for attr in self.node_attributes_lv0:
             if not self.hover_nodes and attr != node_color:
                 continue
-            self.node_properties_lv0[attr] = [
-                nodes[n][attr] for n in nodes_lv0
-            ]
+            self.node_properties_lv0[attr] = [nodes[n][attr] for n in nodes_lv0]
         if self.bipartite:
             for attr in self.node_attributes_lv1:
                 if not self.hover_nodes and attr != node_color:
                     continue
-                self.node_properties_lv1[attr] = [
-                    nodes[n][attr] for n in nodes_lv1
-                ]
+                self.node_properties_lv1[attr] = [nodes[n][attr] for n in nodes_lv1]
 
         if node_color in self.node_attributes_lv0:
             colormap = BokehGraphColorMap(node_palette, max_colors)
@@ -309,7 +321,6 @@ class BokehGraph:
                 color = "_colormap"
             else:
                 color = node_color
-
 
         source_nodes_lv0 = bokeh.models.ColumnDataSource(self.node_properties_lv0)
         nodes_lv0 = figure.scatter(
@@ -368,7 +379,14 @@ class BokehGraph:
         edge_alpha,
         max_colors,
     ):
-        figure = self.prepare_figure()
+        """Render and return the bokeh figure object of your graph.
+
+        Mostly used for debugging and testing purposes.
+
+        Returns:
+            bokeh.plotting.figure: The figure object.
+        """
+        figure = self._prepare_figure()
 
         figure = self._render_edges(
             figure=figure,
@@ -402,6 +420,20 @@ class BokehGraph:
         edge_size=1,
         max_colors=-1,
     ):
+        """Main function to plot the graph.
+
+        Args:
+            node_color (str, optional): Color of nodes. Defaults to "firebrick".
+            node_palette (str, optional): Color palette of nodes. Defaults to "Category20".
+            node_size (int, optional): Size of nodes. Defaults to 9.
+            node_alpha (float, optional): Alpha of nodes. Defaults to 0.7.
+            edge_color (str, optional): Color of edges. Defaults to "navy".
+            edge_palette (str, optional): Color palette of edges. Defaults to "viridis".
+            edge_alpha (float, optional): Alpha of edges. Defaults to 0.3.
+            edge_size (int, optional): Size of edges. Defaults to 1.
+            max_colors (int, optional): Maximum number of different colors per attribute.
+                Defaults to -1.
+        """
         figure = self.render(
             node_color=node_color,
             node_palette=node_palette,

@@ -39,6 +39,10 @@ select = [
 "Q", # flake8-quotes
 "UP", # pyupgrade
 ]
+ignore = [
+  "D100", # no module docstring
+  "D107", # no docstring in __init__ funcs
+]
 target-version = "py38"
 line-length = 100
 ignore-init-module-imports = true
@@ -53,7 +57,6 @@ ignore-init-module-imports = true
   "F811",
 ]
 "tests/**" = ["D"]
-"docs/examples/introduction old.ipynb" = ["ALL"]
 
 [tool.ruff.pydocstyle]
 convention = "google"
