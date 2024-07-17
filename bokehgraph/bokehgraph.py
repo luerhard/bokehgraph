@@ -275,7 +275,17 @@ class BokehGraph:
             self._nodes = self._gen_node_coordinates()
 
         if self.bipartite:
-            nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
+            try:
+                nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
+            except nx.exception.AmbiguousSolution:
+                # happens if not all components are connected
+                nodes_lv1 = [
+                    node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 1
+                ]
+                nodes_lv0 = [
+                    node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 0
+                ]
+
             self.node_properties_lv0 = {"xs": [], "ys": [], "_node": []}
             self.node_properties_lv1 = {"xs": [], "ys": [], "_node": []}
 
