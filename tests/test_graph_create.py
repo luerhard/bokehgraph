@@ -114,6 +114,31 @@ def test_graph_without_edges():
     assert len(node_data["xs"]) == 2
 
 
+def test_bipartite_graph_without_edges():
+    graph = nx.Graph()
+    graph.add_node("agent", bipartite=0)
+    graph.add_node("loc", bipartite=1)
+
+    plot = BokehGraph(graph, hover_edges=True)
+    figure = plot.render(
+        node_size="age",
+        node_palette="viridis",
+        node_alpha=0.9,
+        node_color="age",
+        edge_size=15,
+        edge_color="navy",
+        max_colors=256,
+        edge_palette="numeric",
+        edge_alpha="weight",
+    )
+
+    edge_data = figure.renderers[0].data_source.data
+    node_data_lv0 = figure.renderers[1].data_source.data
+    node_data_lv1 = figure.renderers[2].data_source.data
+    assert len(edge_data["xs"]) == 0
+    assert len(node_data_lv0["xs"]) == 1
+    assert len(node_data_lv1["xs"]) == 1
+
 def test_graph_bipartite():
     graph = nx.Graph()
     graph.add_node("loc1", bipartite=1, food="pizza")

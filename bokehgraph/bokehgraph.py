@@ -51,12 +51,7 @@ class BokehGraph:
         self._edges = None
 
         self.figure = None
-
-        if (
-            nx.is_bipartite(self.graph)
-            and nx.number_of_edges(self.graph) > 0
-            and nx.get_node_attributes(self.graph, "bipartite")
-        ):
+        if nx.get_node_attributes(self.graph, "bipartite"):
             self.bipartite = 1
         else:
             self.bipartite = 0
