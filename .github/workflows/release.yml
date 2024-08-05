@@ -18,8 +18,9 @@ on:
 jobs:
   test:
     uses: ./.github/workflows/test.yml
-  release:
-    name: Release
+  bump_version:
+    name: Bump Version
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -64,6 +65,19 @@ jobs:
           target_branch: dev
           message: merge main to dev
           github_token: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [bump_version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Enable Poetry
+        uses: abatilo/actions-poetry@v2
       - name: Build project
         run: poetry build
       - name: Create Release
