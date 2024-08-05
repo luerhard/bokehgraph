@@ -1,47 +1,81 @@
-name: Release
+name: Release New Version
 
 on:
-  push:
-    tags:
-      - '*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_increase:
+        description: "Increase Version Number By"
+        required: true
+        default: "prerelease"
+        type: choice
+        options:
+        - "prerelease"
+        - "patch"
+        - "minor"
+        - "major"
+
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
   release:
     name: Release
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v4 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-
-      - name: Install Poetry
+      - name: Enable Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Increase Version
+        id: increase-version
         run: |
-          curl -sSL https://install.python-poetry.org | python - -y
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Build project for distribution
+          poetry version ${{ inputs.version_increase }}
+          echo version=$(poetry version --short) >> $GITHUB_OUTPUT
+      - name: Build project
         run: poetry build
-
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          base: main
+          branch: gh-action/bump-version
+          title: bump version ${{ inputs.version_increase }} to ${{ steps.increase-version.outputs.version }}
+          delete-branch: true
+          commit-message: bump version to ${{ steps.increase-version.outputs.version }}
+      - name: Merge PR
+        uses: juliangruber/merge-pull-request-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ steps.create-pr.outputs.pull-request-number }}
+          method: merge
+          repo: luerhard/bokehgraph
       - name: Check Version
         id: check-version
         run: |
-          [[ "$(poetry version --short)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || echo prerelease=true >> $GITHUB_OUTPUT
-
+          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> $GITHUB_OUTPUT; else echo "prerelease=false" >> $GITHUB_OUTPUT; fi
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.increase-version.outputs.version }}
           draft: false
-          prerelease: steps.check-version.outputs.prerelease == 'true'
-
+          prerelease: ${{ steps.check-version.outputs.prerelease }}
+      - name: Merge main to dev
+        uses: devmasx/merge-branch@master
+        with:
+          type: now
+          from_branch: main
+          target_branch: dev
+          message: merge main to dev
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to PyPI
+        if: steps.check-version.outputs.prelease == 'false'
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
