@@ -67,6 +67,12 @@ jobs:
           tag: ${{ steps.increase-version.outputs.version }}
           draft: false
           prerelease: ${{ steps.check-version.outputs.prerelease }}
+      - name: Publish to PyPI
+        if: steps.check-version.outputs.prerelease == 'false'
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry publish --build
       - name: Merge main to dev
         uses: devmasx/merge-branch@master
         with:
@@ -75,11 +81,3 @@ jobs:
           target_branch: dev
           message: merge main to dev
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Recheck out repo to get new version number
-        uses: actions/checkout@v4
-      - name: Publish to PyPI
-        if: steps.check-version.outputs.prerelease == 'false'
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry publish --build
