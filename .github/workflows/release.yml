@@ -25,10 +25,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
       - name: Enable Poetry
         uses: abatilo/actions-poetry@v2
       - name: Increase Version
@@ -67,6 +63,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - run: git pull
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -75,14 +72,14 @@ jobs:
         uses: abatilo/actions-poetry@v2
       - name: Get Version
         id: get-version
-        run: echo version=$(poetry version --short) >> $GITHUB_OUTPUT
+        run: |
+          echo $(poetry version)
+          echo version=$(poetry version --short) >> $GITHUB_OUTPUT
       - name: Check Version
         id: check-version
         run: |
-          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          if [[ ${{ steps.get-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
           echo "IS PRERELEASE $GITHUB_OUTPUT"
-      - name: Build project
-        run: poetry build
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
