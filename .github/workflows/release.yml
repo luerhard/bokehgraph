@@ -16,11 +16,11 @@ on:
 
 
 jobs:
-  # test:
-  #   uses: ./.github/workflows/test.yml
+  test:
+    uses: ./.github/workflows/test.yml
   release:
     name: Release
-    # needs: [test]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       # Set up environment
@@ -70,14 +70,17 @@ jobs:
           draft: false
           generateReleaseNotes: true
           prerelease: ${{ steps.check-version.outputs.prerelease }}
+        # -------------------------------------------------------------
+        # if you want to test on test-pipy use these commands instead
+        # poetry config repositories.test-pypi https://test.pypi.org/legacy/
+        # poetry config pypi-token.test-pypi ${{ secrets.TESTPYPI_TOKEN }}
+        # poetry publish -r test-pypi
+        # -------------------------------------------------------------
       - name: Publish to PyPI
         if: steps.check-version.outputs.prerelease == 'false'
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry config pypi-token.test-pypi ${{ secrets.TESTPYPI_TOKEN }}
-          poetry publish -r test-pypi
+        run: poetry publish
       # merge main to dev to have up-to-date version number there
       - name: Merge main to dev
         uses: devmasx/merge-branch@master
