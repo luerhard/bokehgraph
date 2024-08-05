@@ -37,7 +37,7 @@ jobs:
       - name: Check Version
         id: check-version
         run: |
-          if [[ ${{ steps.get-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
           echo "IS PRERELEASE $GITHUB_OUTPUT"
       # Create and merge PR to increase version in main
       - name: Create Pull Request
@@ -66,7 +66,7 @@ jobs:
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.get-version.outputs.version }}
+          tag: ${{ steps.increase-version.outputs.version }}
           draft: false
           generateReleaseNotes: true
           prerelease: ${{ steps.check-version.outputs.prerelease }}
