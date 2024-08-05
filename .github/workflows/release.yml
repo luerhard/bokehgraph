@@ -36,8 +36,29 @@ jobs:
         run: |
           poetry version ${{ inputs.version_increase }}
           echo version=$(poetry version --short) >> $GITHUB_OUTPUT
+      - name: Check Version
+        id: check-version
+        run: |
+          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          echo "IS PRERELEASE $GITHUB_OUTPUT"
       - name: Build project
         run: poetry build
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.increase-version.outputs.version }}
+          draft: false
+          prerelease: ${{ steps.check-version.outputs.prerelease }}
+      - name: Publish to PyPI
+        if: steps.check-version.outputs.prerelease == 'false'
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.TESTPYPI_TOKEN }}
+        run: |
+          poetry config repositories.test-pypi https://test.pypi.org/legacy/
+          poetry config pypi-token.test-pypi ${{ secrets.TESTPYPI_TOKEN }}
+          poetry publish -r test-pypi
       - name: Create Pull Request
         id: create-pr
         uses: peter-evans/create-pull-request@v6
@@ -54,25 +75,6 @@ jobs:
           number: ${{ steps.create-pr.outputs.pull-request-number }}
           method: merge
           repo: luerhard/bokehgraph
-      - name: Check Version
-        id: check-version
-        run: |
-          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
-          echo "IS PRERELEASE $GITHUB_OUTPUT"
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "dist/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.increase-version.outputs.version }}
-          draft: false
-          prerelease: ${{ steps.check-version.outputs.prerelease }}
-      - name: Publish to PyPI
-        if: steps.check-version.outputs.prerelease == 'false'
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry publish --build
       - name: Merge main to dev
         uses: devmasx/merge-branch@master
         with:
