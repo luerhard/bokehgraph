@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bokehgraph"
-version = "0.3.1"
+version = "0.4.3a0"
 description = "Interactive Graph visualization for networkX Graphs"
 authors = ["Lukas Erhard <luerhard@googlemail.com>"]
 license = "MIT"
