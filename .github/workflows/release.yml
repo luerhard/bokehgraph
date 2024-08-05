@@ -57,7 +57,8 @@ jobs:
       - name: Check Version
         id: check-version
         run: |
-          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> $GITHUB_OUTPUT; else echo "prerelease=false" >> $GITHUB_OUTPUT; fi
+          if [[ ${{ steps.increase-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          echo "IS PRERELEASE $GITHUB_OUTPUT"
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -75,7 +76,7 @@ jobs:
           message: merge main to dev
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to PyPI
-        if: steps.check-version.outputs.prelease == 'false'
+        if: steps.check-version.outputs.prerelease == 'false'
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
