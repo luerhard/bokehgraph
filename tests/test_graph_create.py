@@ -6,6 +6,7 @@ import pytest
 
 from bokehgraph import BokehGraph
 
+
 @pytest.mark.parametrize("hover_nodes", [True, False])
 @pytest.mark.parametrize("hover_edges", [True, False])
 def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
@@ -139,6 +140,7 @@ def test_bipartite_graph_without_edges():
     assert len(node_data_lv0["xs"]) == 1
     assert len(node_data_lv1["xs"]) == 1
 
+
 def test_graph_bipartite():
     graph = nx.Graph()
     graph.add_node("loc1", bipartite=1, food="pizza")
@@ -222,6 +224,7 @@ def test_graph_bipartite_not_connected():
     assert len(edge_data["xs"]) == 3
     assert len(node_data_lv0["xs"]) == 3
     assert len(node_data_lv1["xs"]) == 2
+
 
 def test_removed_bipartite_attr():
     graph = nx.Graph()

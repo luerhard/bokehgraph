@@ -8,6 +8,7 @@ import networkx as nx
 
 from .colormap import BokehGraphColorMap
 
+
 class BokehGraph:
     """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
 
@@ -169,7 +170,11 @@ class BokehGraph:
         elif not layout and self.bipartite:
             self._layout = nx.bipartite_layout(
                 self.graph,
-                (node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 0),
+                (
+                    node
+                    for node, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == 0
+                ),
                 align="horizontal",
             )
         else:
@@ -215,7 +220,9 @@ class BokehGraph:
             pass
 
         for attr in self.edge_attributes:
-            self.edge_properties[attr] = [data[attr] for _, _, data in self.graph.edges(data=True)]
+            self.edge_properties[attr] = [
+                data[attr] for _, _, data in self.graph.edges(data=True)
+            ]
 
         # Set edge color; potentially based on attribute
         if edge_color in self.edge_attributes:
@@ -279,10 +286,14 @@ class BokehGraph:
             except nx.exception.AmbiguousSolution:
                 # happens if not all components are connected
                 nodes_lv1 = [
-                    node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 1
+                    node
+                    for node, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == 1
                 ]
                 nodes_lv0 = [
-                    node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 0
+                    node
+                    for node, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == 0
                 ]
 
             self.node_properties_lv0 = {"xs": [], "ys": [], "_node": []}
