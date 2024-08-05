@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -75,6 +75,8 @@ jobs:
           target_branch: dev
           message: merge main to dev
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Recheck out repo to get new version number
+        uses: actions/checkout@v4
       - name: Publish to PyPI
         if: steps.check-version.outputs.prerelease == 'false'
         env:
