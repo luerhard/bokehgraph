@@ -5,6 +5,7 @@ import networkx as nx
 
 from bokehgraph import BokehGraph
 
+
 def main():
     graph = nx.barbell_graph(5, 6)
     degrees = nx.degree(graph)
@@ -12,7 +13,10 @@ def main():
     plot = BokehGraph(graph, width=200, height=200, inline=False)
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        color_by="degree", palette="Category20", max_colors=2, node_size=18,
+        color_by="degree",
+        palette="Category20",
+        max_colors=2,
+        node_size=18,
     )
 
     img_path = Path(__file__).parent / "simple_plot.png"

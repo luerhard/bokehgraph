@@ -5,6 +5,7 @@ import bokeh
 from bokeh.colors import RGB
 import bokeh.palettes
 
+
 class BokehGraphColorMapError(Exception):  # noqa: D101
     hint = textwrap.dedent(
         """
@@ -114,7 +115,9 @@ class BokehGraphColorMap:
                     palette = bokeh.palettes.all_palettes[self.palette_name][3]
                     palette = [palette[0], palette[-1]]
                 else:
-                    palette = bokeh.palettes.all_palettes[self.palette_name][self.max_colors]
+                    palette = bokeh.palettes.all_palettes[self.palette_name][
+                        self.max_colors
+                    ]
             except KeyError as e:
                 msg = (
                     f"Palette {self.palette_name} does not exist or support "
