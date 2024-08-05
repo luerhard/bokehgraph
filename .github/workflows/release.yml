@@ -80,6 +80,8 @@ jobs:
         run: |
           if [[ ${{ steps.get-version.outputs.version }} =~ [a-zA-Z] ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
           echo "IS PRERELEASE $GITHUB_OUTPUT"
+      - name: Build Project
+        run: poetry build
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
