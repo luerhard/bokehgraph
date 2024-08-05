@@ -2,11 +2,10 @@ import random
 import textwrap
 
 import bokeh
-import bokeh.palettes
 from bokeh.colors import RGB
+import bokeh.palettes
 
-
-class BokehGraphColorMapException(Exception):
+class BokehGraphColorMapError(Exception):  # noqa: D101
     hint = textwrap.dedent(
         """
         Ensure color_by and palette are set to valid attributes.
@@ -28,16 +27,19 @@ class BokehGraphColorMapException(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return self.msg + "\n" + self.hint
 
 
 class BokehGraphColorMap:
+    """A colormap that manages the color palette for a given attribute."""
+
     def __init__(self, palette, max_colors=-1):
         self.palette_name = palette
 
         if max_colors > 256 and self.palette_name != "numeric":
-            raise BokehGraphColorMapException("Max number of colors is 256 !")
+            msg = "Max number of colors is 256 !"
+            raise BokehGraphColorMapError(msg)
         self.max_colors = max_colors
         self.anchors = None
 
@@ -49,7 +51,7 @@ class BokehGraphColorMap:
 
     @staticmethod
     def _color_map(categories, palette):
-        return {group: color for group, color in zip(categories, palette)}
+        return dict(zip(sorted(categories), palette))
 
     @staticmethod
     def _map_dict_to_iterable(d, iterable):
@@ -67,6 +69,14 @@ class BokehGraphColorMap:
         return new
 
     def create_palette(self):
+        """Returns the palette.
+
+        Raises:
+            BokehGraphColorMapError: Raised if something went wrong.
+
+        Returns:
+            list: A list of bokeh colors.
+        """
         if self.palette_name.endswith("256"):
             palette = bokeh.palettes.all_palettes[self.palette_name]
         elif self.palette_name == "numeric":
@@ -104,27 +114,37 @@ class BokehGraphColorMap:
                     palette = bokeh.palettes.all_palettes[self.palette_name][3]
                     palette = [palette[0], palette[-1]]
                 else:
-                    palette = bokeh.palettes.all_palettes[self.palette_name][
-                        self.max_colors
-                    ]
+                    palette = bokeh.palettes.all_palettes[self.palette_name][self.max_colors]
             except KeyError as e:
-                raise BokehGraphColorMapException(
-                    "Palette {} does not exist or support {} colors !".format(
-                        self.palette_name,
-                        self.max_colors,
-                    ),
+                msg = (
+                    f"Palette {self.palette_name} does not exist or support "
+                    f"{self.max_colors} colors !"
+                )
+                raise BokehGraphColorMapError(
+                    msg,
                 ) from e
         return palette
 
     def map(self, color_attribute):
+        """Maps a color attribute.
 
+        Args:
+            color_attribute (Hashable): The attribute that should be mapped.
+
+        Raises:
+            BokehGraphColorMapError: Raised if something went wrong.
+
+        Returns:
+            Iterable: The mapped attribute.
+        """
         categories = set(color_attribute)
         n_categories = len(categories)
 
         if self.max_colors > 0:
             if n_categories > self.max_colors:
                 color_map_values = self._reduce_categories(
-                    color_attribute, self.max_colors
+                    color_attribute,
+                    self.max_colors,
                 )
                 self.max_colors = len(set(color_map_values))
             else:
@@ -134,14 +154,13 @@ class BokehGraphColorMap:
             self.max_colors = n_categories
             color_map_values = color_attribute
         else:
-            raise BokehGraphColorMapException(
-                (
-                    "Too many categories color attribute! {}\n"
-                    "Set max_colors to a value: "
-                    "0 < max_colors <= 256 !".format(
-                        n_categories
-                    )
-                ),
+            msg = (
+                f"Too many categories color attribute! {n_categories}\n"
+                "Set max_colors to a value: "
+                "0 < max_colors <= 256 !"
+            )
+            raise BokehGraphColorMapError(
+                (msg),
             )
         palette = self.create_palette()
         colormap = self._color_map(set(color_map_values), palette)

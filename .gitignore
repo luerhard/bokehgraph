@@ -131,3 +131,4 @@ dmypy.json
 
 poetry.lock
 Untitled.ipynb
+.DS_Store
