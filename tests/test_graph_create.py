@@ -4,6 +4,7 @@ from bokeh.io import export_png
 import networkx as nx
 import pytest
 
+from bokehgraph import BokehBipartiteGraph
 from bokehgraph import BokehGraph
 
 
@@ -120,7 +121,7 @@ def test_bipartite_graph_without_edges():
     graph.add_node("agent", bipartite=0)
     graph.add_node("loc", bipartite=1)
 
-    plot = BokehGraph(graph, hover_edges=True)
+    plot = BokehBipartiteGraph(graph, hover_edges=True)
     figure = plot.render(
         node_size="age",
         node_palette="viridis",
@@ -155,7 +156,7 @@ def test_graph_bipartite():
     graph.add_edge("loc2", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehGraph(
+    plot = BokehBipartiteGraph(
         graph,
         width=200,
         height=200,
@@ -197,7 +198,7 @@ def test_graph_bipartite_not_connected():
     graph.add_edge("loc1", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehGraph(
+    plot = BokehBipartiteGraph(
         graph,
         width=200,
         height=200,
@@ -240,7 +241,7 @@ def test_removed_bipartite_attr():
     graph.add_edge("loc2", "agent3")
     graph.add_edge("loc2", "loc1")
 
-    plot = BokehGraph(
+    plot = BokehBipartiteGraph(
         graph,
         width=200,
         height=200,
