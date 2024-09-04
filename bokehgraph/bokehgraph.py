@@ -9,117 +9,7 @@ import networkx as nx
 from .colormap import BokehGraphColorMap
 
 
-class BokehGraph:
-    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
-
-    working example:
-    import networkx as nx
-    graph = nx.barbell_graph(5,6)
-    degrees = nx.degree(graph)
-    nx.set_node_attributes(graph, dict(degrees), "degree")
-    plot = BokehGraph(graph, width=800, height=600, inline=True)
-    plot.layout(shrink_factor = 0.6)
-    plot.draw(color_by="degree", palette="Category20", max_colors=2)
-
-
-    The plot is drawn by BokehGraph.draw(node_color="firebrick")
-        - node_color, line_color can be set to every value that bokeh
-          recognizes, including a bokeh.colors.RGB instance. serveral other
-          parameters can be found in the .draw method.
-
-
-    """
-
-    def __init__(
-        self,
-        graph,
-        width=800,
-        height=600,
-        inline=True,
-        hover_nodes=True,
-        hover_edges=False,
-    ):
-        self.graph = graph
-
-        self.width = width
-        self.height = height
-
-        self.hover_nodes = hover_nodes
-        self.hover_edges = hover_edges
-
-        self._layout = None
-        self._nodes = None
-        self._edges = None
-
-        self.figure = None
-        if nx.get_node_attributes(self.graph, "bipartite"):
-            self.bipartite = 1
-        else:
-            self.bipartite = 0
-
-        self.node_properties_lv0 = None
-        self.node_properties_lv1 = None
-
-        if self.bipartite:
-            # lvl 0 set
-            self.node_attributes_lv0 = sorted(
-                {
-                    attr
-                    for _, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 0
-                    for attr in data
-                },
-            )
-            if self.hover_nodes:
-                self._node_tooltips_lv0 = [("type", "node lv0"), ("node", "@_node")]
-                for attr in self.node_attributes_lv0:
-                    if attr == "bipartite":
-                        continue
-                    self._node_tooltips_lv0.append((attr, f"@{attr}"))
-
-            # lvl 1 set
-            self.node_attributes_lv1 = sorted(
-                {
-                    attr
-                    for _, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 1
-                    for attr in data
-                },
-            )
-            if self.hover_nodes:
-                self._node_tooltips_lv1 = [("type", "node lv1"), ("node", "@_node")]
-                for attr in self.node_attributes_lv1:
-                    if attr == "bipartite":
-                        continue
-                    self._node_tooltips_lv1.append((attr, f"@{attr}"))
-        else:
-            # lvl 0 set
-            self.node_attributes_lv0 = sorted(
-                {attr for _, data in self.graph.nodes(data=True) for attr in data},
-            )
-            if self.hover_nodes:
-                self._node_tooltips_lv0 = [("type", "node"), ("node", "@_node")]
-                for attr in self.node_attributes_lv0:
-                    if attr == "bipartite":
-                        continue
-                    self._node_tooltips_lv0.append((attr, f"@{attr}"))
-
-        self.edge_properties = None
-        self.edge_attributes = sorted(
-            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
-        )
-        if self.hover_edges:
-            self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
-            for attr in self.edge_attributes:
-                self._edge_tooltips.append((attr, f"@{attr}"))
-
-        # inline for jupyter notebooks
-        if inline:
-            bokeh.io.output_notebook(hide_banner=True)
-            self.show = lambda x: bokeh.plotting.show(x, notebook_handle=True)
-        else:
-            self.show = lambda x: bokeh.plotting.show(x)
-
+class BaseBokehGraph:
     def _gen_edge_coordinates(self):
         if not self._layout:
             self.layout()
@@ -268,6 +158,76 @@ class BokehGraph:
 
         return figure
 
+
+class BokehGraph(BaseBokehGraph):
+    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
+
+    working example:
+    import networkx as nx
+    graph = nx.barbell_graph(5,6)
+    degrees = nx.degree(graph)
+    nx.set_node_attributes(graph, dict(degrees), "degree")
+    plot = BokehGraph(graph, width=800, height=600, inline=True)
+    plot.layout(shrink_factor = 0.6)
+    plot.draw(node_color="degree", palette="Category20", max_colors=2)
+
+
+    The plot is drawn by BokehGraph.draw(node_color="firebrick")
+        - node_color, line_color can be set to every value that bokeh
+          recognizes, including a bokeh.colors.RGB instance. serveral other
+          parameters can be found in the .draw method.
+
+
+    """
+
+    def __init__(
+        self,
+        graph,
+        width=800,
+        height=600,
+        inline=True,
+        hover_nodes=True,
+        hover_edges=False,
+    ):
+        self.graph = graph
+        self.bipartite = 0
+
+        self.width = width
+        self.height = height
+
+        self.hover_nodes = hover_nodes
+        self.hover_edges = hover_edges
+
+        self._layout = None
+        self._nodes = None
+        self._edges = None
+
+        self.node_properties = None
+
+        self.node_attributes = sorted(
+            {attr for _, data in self.graph.nodes(data=True) for attr in data},
+        )
+        if self.hover_nodes:
+            self._node_tooltips = [("type", "node"), ("node", "@_node")]
+            for attr in self.node_attributes:
+                self._node_tooltips.append((attr, f"@{attr}"))
+
+        self.edge_properties = None
+        self.edge_attributes = sorted(
+            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
+        )
+        if self.hover_edges:
+            self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
+            for attr in self.edge_attributes:
+                self._edge_tooltips.append((attr, f"@{attr}"))
+
+        # inline for jupyter notebooks
+        if inline:
+            bokeh.io.output_notebook(hide_banner=True)
+            self.show = lambda x: bokeh.plotting.show(x, notebook_handle=True)
+        else:
+            self.show = lambda x: bokeh.plotting.show(x)
+
     def _render_nodes(
         self,
         figure,
@@ -280,118 +240,53 @@ class BokehGraph:
         if not self._nodes:
             self._nodes = self._gen_node_coordinates()
 
-        if self.bipartite:
-            try:
-                nodes_lv1, nodes_lv0 = nx.bipartite.sets(self.graph)
-            except nx.exception.AmbiguousSolution:
-                # happens if not all components are connected
-                nodes_lv1 = [
-                    node
-                    for node, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 1
-                ]
-                nodes_lv0 = [
-                    node
-                    for node, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 0
-                ]
-
-            self.node_properties_lv0 = {"xs": [], "ys": [], "_node": []}
-            self.node_properties_lv1 = {"xs": [], "ys": [], "_node": []}
-
-            for node in self._nodes:
-                if node.name in nodes_lv0:
-                    target_dict = self.node_properties_lv0
-                else:
-                    target_dict = self.node_properties_lv1
-                target_dict["xs"].append(node.x)
-                target_dict["ys"].append(node.y)
-                target_dict["_node"].append(node.name)
-        else:
-            xs = [node.x for node in self._nodes]
-            ys = [node.y for node in self._nodes]
-            nodes_lv0 = [node.name for node in self._nodes]
-            self.node_properties_lv0 = {
-                "xs": xs,
-                "ys": ys,
-                "_node": nodes_lv0,
-            }
+        xs = [node.x for node in self._nodes]
+        ys = [node.y for node in self._nodes]
+        nodes = [node.name for node in self._nodes]
+        self.node_properties = {
+            "xs": xs,
+            "ys": ys,
+            "_node": nodes,
+        }
 
         nodes = self.graph.nodes
 
         # Color the nodes
-        for attr in self.node_attributes_lv0:
+        for attr in self.node_attributes:
             if not self.hover_nodes and attr != node_color:
                 continue
-            self.node_properties_lv0[attr] = [nodes[n][attr] for n in nodes_lv0]
+            self.node_properties[attr] = [nodes[n][attr] for n in nodes]
 
-        if self.bipartite:
-            for attr in self.node_attributes_lv1:
-                if not self.hover_nodes and attr != node_color:
-                    continue
-                self.node_properties_lv1[attr] = [nodes[n][attr] for n in nodes_lv1]
-
-        if node_color in self.node_attributes_lv0:
+        if node_color in self.node_attributes:
             colormap = BokehGraphColorMap(node_palette, max_colors)
-            self.node_properties_lv0["_colormap"] = colormap.map(
-                self.node_properties_lv0[node_color],
+            self.node_properties["_colormap"] = colormap.map(
+                self.node_properties[node_color],
             )
             color = "_colormap"
         else:
             color = node_color
 
-        if self.bipartite:
-            if node_color in self.node_attributes_lv1:
-                colormap = BokehGraphColorMap(node_palette, max_colors)
-                self.node_properties_lv1["_colormap"] = colormap.map(
-                    self.node_properties_lv1[node_color],
-                )
-                color = "_colormap"
-            else:
-                color = node_color
-
-        source_nodes_lv0 = bokeh.models.ColumnDataSource(self.node_properties_lv0)
-        nodes_lv0 = figure.scatter(
+        source_nodes = bokeh.models.ColumnDataSource(self.node_properties)
+        nodes = figure.scatter(
             "xs",
             "ys",
             marker="circle",
             fill_color=color,
             line_color=color,
-            source=source_nodes_lv0,
+            source=source_nodes,
             alpha=node_alpha,
             size=node_size,
         )
-        if self.bipartite:
-            source_nodes_lv1 = bokeh.models.ColumnDataSource(self.node_properties_lv1)
-            nodes_lv1 = figure.scatter(
-                "xs",
-                "ys",
-                marker="square",
-                fill_color=color,
-                line_color=color,
-                source=source_nodes_lv1,
-                alpha=node_alpha,
-                size=node_size,
-            )
 
         if self.hover_nodes:
-            formatter = {tip: "printf" for tip, _ in self._node_tooltips_lv0}
+            formatter = {tip: "printf" for tip, _ in self._node_tooltips}
             hovertool = models.HoverTool(
-                tooltips=self._node_tooltips_lv0,
+                tooltips=self._node_tooltips,
                 formatters=formatter,
-                renderers=[nodes_lv0],
+                renderers=[nodes],
                 attachment="vertical",
             )
             figure.add_tools(hovertool)
-            if self.bipartite:
-                formatter = {tip: "printf" for tip, _ in self._node_tooltips_lv1}
-                hovertool = models.HoverTool(
-                    tooltips=self._node_tooltips_lv1,
-                    formatters=formatter,
-                    renderers=[nodes_lv1],
-                    attachment="vertical",
-                )
-                figure.add_tools(hovertool)
 
         return figure
 
@@ -467,6 +362,273 @@ class BokehGraph:
             node_palette=node_palette,
             node_size=node_size,
             node_alpha=node_alpha,
+            edge_color=edge_color,
+            edge_palette=edge_palette,
+            edge_size=edge_size,
+            edge_alpha=edge_alpha,
+            max_colors=max_colors,
+        )
+        self.show(figure)
+
+
+class BokehBipartiteGraph(BaseBokehGraph):
+    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
+
+    working example:
+    import networkx as nx
+    graph = nx.barbell_graph(5,6)
+    degrees = nx.degree(graph)
+    nx.set_node_attributes(graph, dict(degrees), "degree")
+    plot = BokehGraph(graph, width=800, height=600, inline=True)
+    plot.layout(shrink_factor = 0.6)
+    plot.draw(color_by="degree", palette="Category20", max_colors=2)
+
+
+    The plot is drawn by BokehGraph.draw(node_color="firebrick")
+        - node_color, line_color can be set to every value that bokeh
+          recognizes, including a bokeh.colors.RGB instance. serveral other
+          parameters can be found in the .draw method.
+
+
+    """
+
+    def __init__(
+        self,
+        graph,
+        width=800,
+        height=600,
+        inline=True,
+        hover_nodes=True,
+        hover_edges=False,
+    ):
+        self.graph = graph
+
+        self.width = width
+        self.height = height
+
+        self.hover_nodes = hover_nodes
+        self.hover_edges = hover_edges
+
+        self._layout = None
+        self._nodes = None
+        self._edges = None
+
+        self.bipartite = 1
+
+        self.node_properties = {0: None, 1: None}
+        self.node_attributes = {0: None, 1: None}
+        self._node_tooltips = {0: None, 1: None}
+
+        # lvl 0 set
+        for node_level in [0, 1]:
+            self.node_attributes[node_level] = sorted(
+                {
+                    attr
+                    for _, data in self.graph.nodes(data=True)
+                    if data["bipartite"] == node_level
+                    for attr in data
+                },
+            )
+            if self.hover_nodes:
+                self._node_tooltips[node_level] = [
+                    ("type", "node lv0"),
+                    ("node", "@_node"),
+                ]
+                for attr in self.node_attributes[node_level]:
+                    if attr == "bipartite":
+                        continue
+                    self._node_tooltips[node_level].append((attr, f"@{attr}"))
+
+        self.edge_properties = None
+        self.edge_attributes = sorted(
+            {attr for _, _, data in self.graph.edges(data=True) for attr in data},
+        )
+        if self.hover_edges:
+            self._edge_tooltips = [("type", "edge"), ("u", "@_u"), ("v", "@_v")]
+            for attr in self.edge_attributes:
+                self._edge_tooltips.append((attr, f"@{attr}"))
+
+        # inline for jupyter notebooks
+        if inline:
+            bokeh.io.output_notebook(hide_banner=True)
+            self.show = lambda x: bokeh.plotting.show(x, notebook_handle=True)
+        else:
+            self.show = lambda x: bokeh.plotting.show(x)
+
+    def _gen_node_coordinates(self):
+        if not self._layout:
+            self.layout()
+
+        names, coords = zip(*self._layout.items())
+        node = namedtuple("node", "name x y")
+
+        return [node(name, x, y) for name, (x, y) in zip(names, coords)]
+
+    def _render_nodes(
+        self,
+        figure,
+        node_level,
+        node_alpha,
+        node_size,
+        node_color,
+        node_palette,
+        max_colors,
+    ):
+        if not self._nodes:
+            self._nodes = self._gen_node_coordinates()
+
+        nodes = {
+            node
+            for node, data in self.graph.nodes(data=True)
+            if data["bipartite"] == node_level
+        }
+
+        self.node_properties[node_level] = {"xs": [], "ys": [], "_node": []}
+
+        for node in self._nodes:
+            if node.name not in nodes:
+                # nodes of the wrong level
+                continue
+            self.node_properties[node_level]["xs"].append(node.x)
+            self.node_properties[node_level]["ys"].append(node.y)
+            self.node_properties[node_level]["_node"].append(node.name)
+
+        # Color the nodes
+        for attr in self.node_attributes[node_level]:
+            if not self.hover_nodes and attr != node_color:
+                continue
+            self.node_properties[node_level][attr] = [
+                self.graph.nodes[n][attr] for n in nodes
+            ]
+
+        if node_color in self.node_attributes[node_level]:
+            colormap = BokehGraphColorMap(node_palette, max_colors)
+            self.node_properties[node_level]["_colormap"] = colormap.map(
+                self.node_properties[node_level][node_color],
+            )
+            color = "_colormap"
+        else:
+            color = node_color
+
+        source_nodes = bokeh.models.ColumnDataSource(self.node_properties[node_level])
+        nodes = figure.scatter(
+            "xs",
+            "ys",
+            marker="circle",
+            fill_color=color,
+            line_color=color,
+            source=source_nodes,
+            alpha=node_alpha,
+            size=node_size,
+        )
+
+        if self.hover_nodes:
+            formatter = {tip: "printf" for tip, _ in self._node_tooltips[node_level]}
+            hovertool = models.HoverTool(
+                tooltips=self._node_tooltips[node_level],
+                formatters=formatter,
+                renderers=[nodes],
+                attachment="vertical",
+            )
+            figure.add_tools(hovertool)
+
+        return figure
+
+    def render(
+        self,
+        node_color_lv0,
+        node_palette_lv0,
+        node_size_lv0,
+        node_alpha_lv0,
+        node_color_lv1,
+        node_palette_lv1,
+        node_size_lv1,
+        node_alpha_lv1,
+        edge_color,
+        edge_palette,
+        edge_size,
+        edge_alpha,
+        max_colors,
+    ):
+        """Render and return the bokeh figure object of your graph.
+
+        Mostly used for debugging and testing purposes.
+
+        Returns:
+            bokeh.plotting.figure: The figure object.
+        """
+        figure = self._prepare_figure()
+
+        figure = self._render_edges(
+            figure=figure,
+            edge_color=edge_color,
+            edge_palette=edge_palette,
+            edge_alpha=edge_alpha,
+            edge_size=edge_size,
+            max_colors=max_colors,
+        )
+
+        figure = self._render_nodes(
+            node_level=0,
+            figure=figure,
+            node_color=node_color_lv0,
+            node_palette=node_palette_lv0,
+            node_size=node_size_lv0,
+            node_alpha=node_alpha_lv0,
+            max_colors=max_colors,
+        )
+
+        figure = self._render_nodes(
+            node_level=1,
+            figure=figure,
+            node_color=node_color_lv1,
+            node_palette=node_palette_lv1,
+            node_size=node_size_lv1,
+            node_alpha=node_alpha_lv1,
+            max_colors=max_colors,
+        )
+
+        return figure
+
+    def draw(
+        self,
+        node_color_lv0="firebrick",
+        node_palette_lv0="Category20",
+        node_size_lv0=9,
+        node_alpha_lv0=0.7,
+        node_color_lv1="firebrick",
+        node_palette_lv1="Category20",
+        node_size_lv1=9,
+        node_alpha_lv1=0.7,
+        edge_color="navy",
+        edge_palette="viridis",
+        edge_alpha=0.3,
+        edge_size=1,
+        max_colors=-1,
+    ):
+        """Main function to plot the graph.
+
+        Args:
+            node_color (str, optional): Color of nodes. Defaults to "firebrick".
+            node_palette (str, optional): Color palette of nodes. Defaults to "Category20".
+            node_size (int, optional): Size of nodes. Defaults to 9.
+            node_alpha (float, optional): Alpha of nodes. Defaults to 0.7.
+            edge_color (str, optional): Color of edges. Defaults to "navy".
+            edge_palette (str, optional): Color palette of edges. Defaults to "viridis".
+            edge_alpha (float, optional): Alpha of edges. Defaults to 0.3.
+            edge_size (int, optional): Size of edges. Defaults to 1.
+            max_colors (int, optional): Maximum number of different colors per attribute.
+                Defaults to -1.
+        """
+        figure = self.render(
+            node_color_lv0=node_color_lv0,
+            node_palette_lv0=node_palette_lv0,
+            node_size_lv0=node_size_lv0,
+            node_alpha_lv0=node_alpha_lv0,
+            node_color_lv1=node_color_lv1,
+            node_palette_lv1=node_palette_lv1,
+            node_size_lv1=node_size_lv1,
+            node_alpha_lv1=node_alpha_lv1,
             edge_color=edge_color,
             edge_palette=edge_palette,
             edge_size=edge_size,

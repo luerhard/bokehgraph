@@ -4,6 +4,7 @@ from bokeh.io import export_png
 import networkx as nx
 import pytest
 
+from bokehgraph import BokehBipartiteGraph
 from bokehgraph import BokehGraph
 
 
@@ -120,12 +121,16 @@ def test_bipartite_graph_without_edges():
     graph.add_node("agent", bipartite=0)
     graph.add_node("loc", bipartite=1)
 
-    plot = BokehGraph(graph, hover_edges=True)
+    plot = BokehBipartiteGraph(graph, hover_edges=True)
     figure = plot.render(
-        node_size="age",
-        node_palette="viridis",
-        node_alpha=0.9,
-        node_color="age",
+        node_size_lv0="firebrick",
+        node_palette_lv0="viridis",
+        node_alpha_lv0=0.9,
+        node_color_lv0="firebrick",
+        node_size_lv1="firebrick",
+        node_palette_lv1="viridis",
+        node_alpha_lv1=0.9,
+        node_color_lv1="firebrick",
         edge_size=15,
         edge_color="navy",
         max_colors=256,
@@ -155,7 +160,7 @@ def test_graph_bipartite():
     graph.add_edge("loc2", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehGraph(
+    plot = BokehBipartiteGraph(
         graph,
         width=200,
         height=200,
@@ -165,15 +170,19 @@ def test_graph_bipartite():
     )
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        node_palette="Category20",
-        node_size=26,
-        edge_size=10,
-        edge_palette="Plasma",
-        edge_alpha=0.5,
-        node_alpha=0.9,
-        node_color="firebrick",
+        node_color_lv0="firebrick",
+        node_palette_lv0="Category20",
+        node_size_lv0=9,
+        node_alpha_lv0=0.7,
+        node_color_lv1="firebrick",
+        node_palette_lv1="Category20",
+        node_size_lv1=9,
+        node_alpha_lv1=0.7,
         edge_color="navy",
-        max_colors=2,
+        edge_palette="viridis",
+        edge_alpha=0.3,
+        edge_size=1,
+        max_colors=-1,
     )
 
     edge_data = figure.renderers[0].data_source.data
@@ -197,7 +206,7 @@ def test_graph_bipartite_not_connected():
     graph.add_edge("loc1", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehGraph(
+    plot = BokehBipartiteGraph(
         graph,
         width=200,
         height=200,
@@ -207,14 +216,18 @@ def test_graph_bipartite_not_connected():
     )
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        node_palette="Category20",
-        node_size=26,
+        node_color_lv0="age",
+        node_color_lv1="food",
+        node_palette_lv0="viridis",
+        node_palette_lv1="Category20",
+        node_size_lv0=26,
+        node_size_lv1=26,
+        node_alpha_lv0=0.9,
+        node_alpha_lv1=0.9,
+        edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        node_alpha=0.9,
-        node_color="firebrick",
-        edge_color="navy",
         max_colors=2,
     )
 
@@ -265,3 +278,91 @@ def test_removed_bipartite_attr():
     node_data = figure.renderers[1].data_source.data
     assert len(edge_data["xs"]) == 4
     assert len(node_data["xs"]) == 5
+
+
+def test_bipartite_node_color_single_level(tmp_path, image_regression):
+    g = nx.Graph()
+    g.add_node(1, bipartite=0, gender="m")
+    g.add_node(2, bipartite=0, gender="w")
+    g.add_node(3, bipartite=1)
+    g.add_node(4, bipartite=1)
+    g.add_edge(1, 3)
+    g.add_edge(1, 4)
+    g.add_edge(2, 3)
+    g.add_edge(2, 4)
+
+    plot = BokehBipartiteGraph(g, width=500, height=500, hover_edges=True)
+    figure = plot.render(
+        node_color_lv0="gender",
+        node_color_lv1="firebrick",
+        node_palette_lv0="viridis",
+        node_palette_lv1="Category20",
+        node_size_lv0=20,
+        node_size_lv1=20,
+        node_alpha_lv0=0.9,
+        node_alpha_lv1=0.9,
+        edge_color="navy",
+        edge_size=10,
+        edge_palette="Plasma",
+        edge_alpha=0.5,
+        max_colors=2,
+    )
+
+    test_img = tmp_path / "test_img.png"
+    # for this to work, geckodriver or chromedriver have to be installed since
+    # selenium is used for png export by bokeh
+    from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
+
+    options = Options()
+    options.add_argument("-headless")
+    with webdriver.Firefox(options=options) as driver:
+        export_png(figure, webdriver=driver, filename=test_img)
+
+    with Path(test_img).open("rb") as f:
+        img = f.read()
+        image_regression.check(img, diff_threshold=1)
+
+
+def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regression):
+    g = nx.Graph()
+    g.add_node(1, bipartite=0, gender="m")
+    g.add_node(2, bipartite=0, gender="m")
+    g.add_node(3, bipartite=1, gender="m")
+    g.add_node(4, bipartite=1, gender="m")
+    g.add_edge(1, 3)
+    g.add_edge(1, 4)
+    g.add_edge(2, 3)
+    g.add_edge(2, 4)
+
+    plot = BokehBipartiteGraph(g, width=500, height=500, hover_edges=True)
+    figure = plot.render(
+        node_color_lv0="gender",
+        node_color_lv1="gender",
+        node_palette_lv0="viridis",
+        node_palette_lv1="Category20",
+        node_size_lv0=20,
+        node_size_lv1=20,
+        node_alpha_lv0=0.9,
+        node_alpha_lv1=0.9,
+        edge_color="navy",
+        edge_size=10,
+        edge_palette="Plasma",
+        edge_alpha=0.5,
+        max_colors=2,
+    )
+
+    test_img = tmp_path / "test_img.png"
+    # for this to work, geckodriver or chromedriver have to be installed since
+    # selenium is used for png export by bokeh
+    from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
+
+    options = Options()
+    options.add_argument("-headless")
+    with webdriver.Firefox(options=options) as driver:
+        export_png(figure, webdriver=driver, filename=test_img)
+
+    with Path(test_img).open("rb") as f:
+        img = f.read()
+        image_regression.check(img, diff_threshold=1)

@@ -110,7 +110,7 @@ class BokehGraphColorMap:
             )(self.max_colors)
         else:
             try:
-                if self.max_colors == 2:
+                if 1 <= self.max_colors <= 2:
                     # Use maximum contrast if only two colors
                     palette = bokeh.palettes.all_palettes[self.palette_name][3]
                     palette = [palette[0], palette[-1]]
