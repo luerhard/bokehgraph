@@ -123,10 +123,14 @@ def test_bipartite_graph_without_edges():
 
     plot = BokehBipartiteGraph(graph, hover_edges=True)
     figure = plot.render(
-        node_size="age",
-        node_palette="viridis",
-        node_alpha=0.9,
-        node_color="age",
+        node_size_lv0="firebrick",
+        node_palette_lv0="viridis",
+        node_alpha_lv0=0.9,
+        node_color_lv0="firebrick",
+        node_size_lv1="firebrick",
+        node_palette_lv1="viridis",
+        node_alpha_lv1=0.9,
+        node_color_lv1="firebrick",
         edge_size=15,
         edge_color="navy",
         max_colors=256,
@@ -166,15 +170,19 @@ def test_graph_bipartite():
     )
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        node_palette="Category20",
-        node_size=26,
-        edge_size=10,
-        edge_palette="Plasma",
-        edge_alpha=0.5,
-        node_alpha=0.9,
-        node_color="firebrick",
+        node_color_lv0="firebrick",
+        node_palette_lv0="Category20",
+        node_size_lv0=9,
+        node_alpha_lv0=0.7,
+        node_color_lv1="firebrick",
+        node_palette_lv1="Category20",
+        node_size_lv1=9,
+        node_alpha_lv1=0.7,
         edge_color="navy",
-        max_colors=2,
+        edge_palette="viridis",
+        edge_alpha=0.3,
+        edge_size=1,
+        max_colors=-1,
     )
 
     edge_data = figure.renderers[0].data_source.data
@@ -208,14 +216,18 @@ def test_graph_bipartite_not_connected():
     )
     plot.layout(shrink_factor=1, seed=2)
     figure = plot.render(
-        node_palette="Category20",
-        node_size=26,
+        node_color_lv0="age",
+        node_color_lv1="food",
+        node_palette_lv0="viridis",
+        node_palette_lv1="Category20",
+        node_size_lv0=26,
+        node_size_lv1=26,
+        node_alpha_lv0=0.9,
+        node_alpha_lv1=0.9,
+        edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        node_alpha=0.9,
-        node_color="firebrick",
-        edge_color="navy",
         max_colors=2,
     )
 
@@ -241,7 +253,7 @@ def test_removed_bipartite_attr():
     graph.add_edge("loc2", "agent3")
     graph.add_edge("loc2", "loc1")
 
-    plot = BokehBipartiteGraph(
+    plot = BokehGraph(
         graph,
         width=200,
         height=200,
