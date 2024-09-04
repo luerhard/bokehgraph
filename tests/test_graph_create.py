@@ -322,3 +322,47 @@ def test_bipartite_node_color_single_level(tmp_path, image_regression):
     with Path(test_img).open("rb") as f:
         img = f.read()
         image_regression.check(img, diff_threshold=1)
+
+
+def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regression):
+    g = nx.Graph()
+    g.add_node(1, bipartite=0, gender="m")
+    g.add_node(2, bipartite=0, gender="m")
+    g.add_node(3, bipartite=1, gender="m")
+    g.add_node(4, bipartite=1, gender="m")
+    g.add_edge(1, 3)
+    g.add_edge(1, 4)
+    g.add_edge(2, 3)
+    g.add_edge(2, 4)
+
+    plot = BokehBipartiteGraph(g, width=500, height=500, hover_edges=True)
+    figure = plot.render(
+        node_color_lv0="gender",
+        node_color_lv1="gender",
+        node_palette_lv0="viridis",
+        node_palette_lv1="Category20",
+        node_size_lv0=20,
+        node_size_lv1=20,
+        node_alpha_lv0=0.9,
+        node_alpha_lv1=0.9,
+        edge_color="navy",
+        edge_size=10,
+        edge_palette="Plasma",
+        edge_alpha=0.5,
+        max_colors=2,
+    )
+
+    test_img = tmp_path / "test_img.png"
+    # for this to work, geckodriver or chromedriver have to be installed since
+    # selenium is used for png export by bokeh
+    from selenium import webdriver
+    from selenium.webdriver.firefox.options import Options
+
+    options = Options()
+    options.add_argument("-headless")
+    with webdriver.Firefox(options=options) as driver:
+        export_png(figure, webdriver=driver, filename=test_img)
+
+    with Path(test_img).open("rb") as f:
+        img = f.read()
+        image_regression.check(img, diff_threshold=1)
