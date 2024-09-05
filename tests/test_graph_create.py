@@ -28,6 +28,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
         node_palette="Category20",
         node_size=18,
         node_alpha=0.5,
+        node_marker="circle",
         edge_color="navy",
         edge_palette="Viridis",
         edge_size=1,
@@ -48,7 +49,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
 
     with Path(test_img).open("rb") as f:
         img = f.read()
-        image_regression.check(img, diff_threshold=1)
+        image_regression.check(img, diff_threshold=0.1)
 
 
 @pytest.mark.parametrize(
@@ -78,6 +79,7 @@ def test_edge_alpha_ordering(edges):
         node_palette="viridis",
         node_alpha=0.9,
         node_color="age",
+        node_marker="circle",
         edge_size=15,
         edge_color="navy",
         max_colors=256,
@@ -104,6 +106,7 @@ def test_graph_without_edges():
         node_palette="viridis",
         node_alpha=0.9,
         node_color="age",
+        node_marker="circle",
         edge_size=15,
         edge_color="navy",
         max_colors=256,
@@ -131,6 +134,8 @@ def test_bipartite_graph_without_edges():
         node_palette_lv1="viridis",
         node_alpha_lv1=0.9,
         node_color_lv1="firebrick",
+        node_marker_lv0="circle",
+        node_marker_lv1="square",
         edge_size=15,
         edge_color="navy",
         max_colors=256,
@@ -178,6 +183,8 @@ def test_graph_bipartite():
         node_palette_lv1="Category20",
         node_size_lv1=9,
         node_alpha_lv1=0.7,
+        node_marker_lv0="circle",
+        node_marker_lv1="square",
         edge_color="navy",
         edge_palette="viridis",
         edge_alpha=0.3,
@@ -224,6 +231,8 @@ def test_graph_bipartite_not_connected():
         node_size_lv1=26,
         node_alpha_lv0=0.9,
         node_alpha_lv1=0.9,
+        node_marker_lv0="circle",
+        node_marker_lv1="square",
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
@@ -265,6 +274,7 @@ def test_removed_bipartite_attr():
     figure = plot.render(
         node_palette="Category20",
         node_size=26,
+        node_marker="circle",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
@@ -301,6 +311,8 @@ def test_bipartite_node_color_single_level(tmp_path, image_regression):
         node_size_lv1=20,
         node_alpha_lv0=0.9,
         node_alpha_lv1=0.9,
+        node_marker_lv0="circle",
+        node_marker_lv1="square",
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
@@ -321,7 +333,7 @@ def test_bipartite_node_color_single_level(tmp_path, image_regression):
 
     with Path(test_img).open("rb") as f:
         img = f.read()
-        image_regression.check(img, diff_threshold=1)
+        image_regression.check(img, diff_threshold=0.1)
 
 
 def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regression):
@@ -345,6 +357,8 @@ def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regres
         node_size_lv1=20,
         node_alpha_lv0=0.9,
         node_alpha_lv1=0.9,
+        node_marker_lv0="circle",
+        node_marker_lv1="square",
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
@@ -365,4 +379,4 @@ def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regres
 
     with Path(test_img).open("rb") as f:
         img = f.read()
-        image_regression.check(img, diff_threshold=1)
+        image_regression.check(img, diff_threshold=0.1)

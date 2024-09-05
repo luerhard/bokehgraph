@@ -231,6 +231,7 @@ class BokehGraph(BaseBokehGraph):
     def _render_nodes(
         self,
         figure,
+        marker,
         node_alpha,
         node_size,
         node_color,
@@ -270,7 +271,7 @@ class BokehGraph(BaseBokehGraph):
         nodes = figure.scatter(
             "xs",
             "ys",
-            marker="circle",
+            marker=marker,
             fill_color=color,
             line_color=color,
             source=source_nodes,
@@ -296,6 +297,7 @@ class BokehGraph(BaseBokehGraph):
         node_palette,
         node_size,
         node_alpha,
+        node_marker,
         edge_color,
         edge_palette,
         edge_size,
@@ -322,6 +324,7 @@ class BokehGraph(BaseBokehGraph):
 
         figure = self._render_nodes(
             figure=figure,
+            marker=node_marker,
             node_color=node_color,
             node_palette=node_palette,
             node_size=node_size,
@@ -337,6 +340,7 @@ class BokehGraph(BaseBokehGraph):
         node_palette="Category20",
         node_size=9,
         node_alpha=0.7,
+        node_marker="circle",
         edge_color="navy",
         edge_palette="viridis",
         edge_alpha=0.3,
@@ -362,6 +366,7 @@ class BokehGraph(BaseBokehGraph):
             node_palette=node_palette,
             node_size=node_size,
             node_alpha=node_alpha,
+            node_marker=node_marker,
             edge_color=edge_color,
             edge_palette=edge_palette,
             edge_size=edge_size,
@@ -467,6 +472,7 @@ class BokehBipartiteGraph(BaseBokehGraph):
     def _render_nodes(
         self,
         figure,
+        marker,
         node_level,
         node_alpha,
         node_size,
@@ -514,7 +520,7 @@ class BokehBipartiteGraph(BaseBokehGraph):
         nodes = figure.scatter(
             "xs",
             "ys",
-            marker="circle",
+            marker=marker,
             fill_color=color,
             line_color=color,
             source=source_nodes,
@@ -540,10 +546,12 @@ class BokehBipartiteGraph(BaseBokehGraph):
         node_palette_lv0,
         node_size_lv0,
         node_alpha_lv0,
+        node_marker_lv0,
         node_color_lv1,
         node_palette_lv1,
         node_size_lv1,
         node_alpha_lv1,
+        node_marker_lv1,
         edge_color,
         edge_palette,
         edge_size,
@@ -569,8 +577,9 @@ class BokehBipartiteGraph(BaseBokehGraph):
         )
 
         figure = self._render_nodes(
-            node_level=0,
             figure=figure,
+            node_level=0,
+            marker=node_marker_lv0,
             node_color=node_color_lv0,
             node_palette=node_palette_lv0,
             node_size=node_size_lv0,
@@ -579,8 +588,9 @@ class BokehBipartiteGraph(BaseBokehGraph):
         )
 
         figure = self._render_nodes(
-            node_level=1,
             figure=figure,
+            node_level=1,
+            marker=node_marker_lv1,
             node_color=node_color_lv1,
             node_palette=node_palette_lv1,
             node_size=node_size_lv1,
@@ -596,10 +606,12 @@ class BokehBipartiteGraph(BaseBokehGraph):
         node_palette_lv0="Category20",
         node_size_lv0=9,
         node_alpha_lv0=0.7,
+        node_marker_lv0="circle",
         node_color_lv1="firebrick",
         node_palette_lv1="Category20",
         node_size_lv1=9,
         node_alpha_lv1=0.7,
+        node_marker_lv1="square",
         edge_color="navy",
         edge_palette="viridis",
         edge_alpha=0.3,
@@ -625,10 +637,12 @@ class BokehBipartiteGraph(BaseBokehGraph):
             node_palette_lv0=node_palette_lv0,
             node_size_lv0=node_size_lv0,
             node_alpha_lv0=node_alpha_lv0,
+            node_marker_lv0=node_marker_lv0,
             node_color_lv1=node_color_lv1,
             node_palette_lv1=node_palette_lv1,
             node_size_lv1=node_size_lv1,
             node_alpha_lv1=node_alpha_lv1,
+            node_marker_lv1=node_marker_lv1,
             edge_color=edge_color,
             edge_palette=edge_palette,
             edge_size=edge_size,
