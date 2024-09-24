@@ -483,11 +483,11 @@ class BokehBipartiteGraph(BaseBokehGraph):
         if not self._nodes:
             self._nodes = self._gen_node_coordinates()
 
-        nodes = {
+        nodes = [
             node
             for node, data in self.graph.nodes(data=True)
             if data["bipartite"] == node_level
-        }
+        ]
 
         self.node_properties[node_level] = {"xs": [], "ys": [], "_node": []}
 

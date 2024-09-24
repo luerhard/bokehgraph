@@ -380,3 +380,65 @@ def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regres
     with Path(test_img).open("rb") as f:
         img = f.read()
         image_regression.check(img, diff_threshold=0.1)
+
+
+def test_keep_property_order_world_graph():
+    nodes = [
+        (2, {"bipartite": 1, "type": "Location"}),
+        (3, {"bipartite": 0}),
+        (4, {"bipartite": 0}),
+        (5, {"bipartite": 0}),
+        (6, {"bipartite": 1, "type": "School"}),
+        (1, {"bipartite": 0}),
+        (7, {"bipartite": 1, "type": "Location"}),
+        (8, {"bipartite": 1, "type": "World"}),
+    ]
+
+    edges = [
+        (2, 3, {"weight": 1}),
+        (3, 8, {"weight": 1}),
+        (4, 6, {"weight": 1}),
+        (4, 7, {"weight": 1}),
+        (4, 8, {"weight": 1}),
+        (5, 6, {"weight": 1}),
+        (5, 8, {"weight": 1}),
+        (1, 7, {"weight": 1}),
+        (1, 8, {"weight": 1}),
+    ]
+
+    graph = nx.Graph()
+    for node, attrs in nodes:
+        graph.add_node(node, **attrs)
+    for u, v, attrs in edges:
+        graph.add_edge(u, v, **attrs)
+
+    graph_layout = nx.drawing.spring_layout(graph)
+    plot = BokehBipartiteGraph(graph, width=400, height=400, hover_edges=True)
+    plot.layout(layout=graph_layout)
+
+    out = plot.render(
+        node_color_lv0="firebrick",
+        node_palette_lv0="Category20",
+        node_size_lv0=9,
+        node_alpha_lv0=0.7,
+        node_marker_lv0="circle",
+        node_color_lv1="firebrick",
+        node_palette_lv1="Category20",
+        node_size_lv1=9,
+        node_alpha_lv1=0.7,
+        node_marker_lv1="square",
+        edge_color="navy",
+        edge_palette="viridis",
+        edge_alpha=0.3,
+        edge_size=1,
+        max_colors=-1,
+    )
+
+    exp_types = [
+        attr["type"] for node, attr in graph.nodes(data=True) if attr["bipartite"] == 1
+    ]
+
+    node_data_lv1 = out.renderers[2].data_source.data
+    types = node_data_lv1["type"]
+
+    assert exp_types == types
