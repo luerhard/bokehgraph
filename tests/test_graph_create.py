@@ -143,12 +143,14 @@ def test_bipartite_graph_without_edges():
         edge_alpha="weight",
     )
 
-    edge_data = figure.renderers[0].data_source.data
-    node_data_lv0 = figure.renderers[1].data_source.data
-    node_data_lv1 = figure.renderers[2].data_source.data
-    assert len(edge_data["xs"]) == 0
+    node_data_lv0 = figure.renderers[0].data_source.data
+    node_data_lv1 = figure.renderers[1].data_source.data
     assert len(node_data_lv0["xs"]) == 1
     assert len(node_data_lv1["xs"]) == 1
+
+    with pytest.raises(IndexError):
+        # make sure there are only to renderers
+        _ = figure.renderers[2].data_source
 
 
 def test_graph_bipartite():

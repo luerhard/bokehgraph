@@ -567,36 +567,43 @@ class BokehBipartiteGraph(BaseBokehGraph):
         """
         figure = self._prepare_figure()
 
-        figure = self._render_edges(
-            figure=figure,
-            edge_color=edge_color,
-            edge_palette=edge_palette,
-            edge_alpha=edge_alpha,
-            edge_size=edge_size,
-            max_colors=max_colors,
-        )
+        if self.graph.edges:
+            figure = self._render_edges(
+                figure=figure,
+                edge_color=edge_color,
+                edge_palette=edge_palette,
+                edge_alpha=edge_alpha,
+                edge_size=edge_size,
+                max_colors=max_colors,
+            )
 
-        figure = self._render_nodes(
-            figure=figure,
-            node_level=0,
-            marker=node_marker_lv0,
-            node_color=node_color_lv0,
-            node_palette=node_palette_lv0,
-            node_size=node_size_lv0,
-            node_alpha=node_alpha_lv0,
-            max_colors=max_colors,
-        )
+        if any(
+            data.get("bipartite", 1) == 0 for _, data in self.graph.nodes(data=True)
+        ):
+            figure = self._render_nodes(
+                figure=figure,
+                node_level=0,
+                marker=node_marker_lv0,
+                node_color=node_color_lv0,
+                node_palette=node_palette_lv0,
+                node_size=node_size_lv0,
+                node_alpha=node_alpha_lv0,
+                max_colors=max_colors,
+            )
 
-        figure = self._render_nodes(
-            figure=figure,
-            node_level=1,
-            marker=node_marker_lv1,
-            node_color=node_color_lv1,
-            node_palette=node_palette_lv1,
-            node_size=node_size_lv1,
-            node_alpha=node_alpha_lv1,
-            max_colors=max_colors,
-        )
+        if any(
+            data.get("bipartite", 0) == 1 for _, data in self.graph.nodes(data=True)
+        ):
+            figure = self._render_nodes(
+                figure=figure,
+                node_level=1,
+                marker=node_marker_lv1,
+                node_color=node_color_lv1,
+                node_palette=node_palette_lv1,
+                node_size=node_size_lv1,
+                node_alpha=node_alpha_lv1,
+                max_colors=max_colors,
+            )
 
         return figure
 
