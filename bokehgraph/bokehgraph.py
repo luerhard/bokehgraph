@@ -313,24 +313,26 @@ class BokehGraph(BaseBokehGraph):
         """
         figure = self._prepare_figure()
 
-        figure = self._render_edges(
-            figure=figure,
-            edge_color=edge_color,
-            edge_palette=edge_palette,
-            edge_alpha=edge_alpha,
-            edge_size=edge_size,
-            max_colors=max_colors,
-        )
+        if self.graph.edges:
+            figure = self._render_edges(
+                figure=figure,
+                edge_color=edge_color,
+                edge_palette=edge_palette,
+                edge_alpha=edge_alpha,
+                edge_size=edge_size,
+                max_colors=max_colors,
+            )
 
-        figure = self._render_nodes(
-            figure=figure,
-            marker=node_marker,
-            node_color=node_color,
-            node_palette=node_palette,
-            node_size=node_size,
-            node_alpha=node_alpha,
-            max_colors=max_colors,
-        )
+        if self.graph.nodes:
+            figure = self._render_nodes(
+                figure=figure,
+                marker=node_marker,
+                node_color=node_color,
+                node_palette=node_palette,
+                node_size=node_size,
+                node_alpha=node_alpha,
+                max_colors=max_colors,
+            )
 
         return figure
 

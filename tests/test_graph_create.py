@@ -113,10 +113,12 @@ def test_graph_without_edges():
         edge_palette="numeric",
         edge_alpha="weight",
     )
-    edge_data = figure.renderers[0].data_source.data
-    node_data = figure.renderers[1].data_source.data
-    assert len(edge_data["xs"]) == 0
+    node_data = figure.renderers[0].data_source.data
     assert len(node_data["xs"]) == 2
+
+    with pytest.raises(IndexError):
+        # assert that there is only 1 renderer
+        _ = figure.renderers[1].data_source.data
 
 
 def test_bipartite_graph_without_edges():
