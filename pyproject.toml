@@ -1,6 +1,6 @@
 [project]
 name = "bokehgraph"
-version = "0.6.4a0"
+version = "0.6.4"
 description = "Interactive Graph visualization for networkX Graphs"
 authors = [{ name = "Lukas Erhard", email = "luerhard@googlemail.com" }]
 requires-python = ">=3.9,<4.0"
