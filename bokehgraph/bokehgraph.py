@@ -40,8 +40,8 @@ class BaseBokehGraph:
 
         Args:
             layout (networkX Layout, optional): Custom layout. Defaults to None which represents
-                nx.spring_layout for non-bipartite graphs and nx.bipartite_layout for bipartite
-                graphs.
+            nx.spring_layout for non-bipartite graphs and nx.bipartite_layout for bipartite
+            graphs.
             shrink_factor (float, optional): Modifies spring-layout. Defaults to 0.8.
             iterations (int, optional): Modifies spring-layout. Defaults to 50.
             scale (int, optional): Modifies spring-layout. Defaults to 1.
@@ -361,7 +361,7 @@ class BokehGraph(BaseBokehGraph):
             edge_alpha (float, optional): Alpha of edges. Defaults to 0.3.
             edge_size (int, optional): Size of edges. Defaults to 1.
             max_colors (int, optional): Maximum number of different colors per attribute.
-                Defaults to -1.
+            Defaults to -1.
         """
         figure = self.render(
             node_color=node_color,
@@ -639,7 +639,7 @@ class BokehBipartiteGraph(BaseBokehGraph):
             edge_alpha (float, optional): Alpha of edges. Defaults to 0.3.
             edge_size (int, optional): Size of edges. Defaults to 1.
             max_colors (int, optional): Maximum number of different colors per attribute.
-                Defaults to -1.
+            Defaults to -1.
         """
         figure = self.render(
             node_color_lv0=node_color_lv0,
