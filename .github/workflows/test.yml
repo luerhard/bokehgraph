@@ -22,6 +22,8 @@ jobs:
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
           python-version: ${{ matrix.python-version }}
       #----------------------------------------------
       #  ----- Setup Firefox driver for Selenium-----
@@ -39,6 +41,7 @@ jobs:
       #----------------------------------------------
       - name: Install dependencies
         run: |
-          uv pip install tox tox-gh-actions
+          uv tool install tox --with tox-uv
+          uv pip install tox-gh-actions
       - name: Test with tox
         run: tox
