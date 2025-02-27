@@ -27,6 +27,18 @@ def test_max_colors_256():
         BokehGraphColorMap("viridis", max_colors=257)
 
 
+def test_inferno256_with_35_colors_all_palettes():
+    colormap = BokehGraphColorMap("Inferno", max_colors=35)
+    palette = colormap.create_palette()
+    assert len(palette) == 35
+
+
+def test_inferno256_with_35_colors_lowercase_palettes():
+    colormap = BokehGraphColorMap("inferno", max_colors=35)
+    palette = colormap.create_palette()
+    assert len(palette) == 35
+
+
 def test_numeric():
     colormap = BokehGraphColorMap("numeric", max_colors=257)
     palette = colormap.create_palette()

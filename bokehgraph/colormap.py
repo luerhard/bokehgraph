@@ -13,8 +13,8 @@ class BokehGraphColorMapError(Exception):  # noqa: D101
 
         Available palettes with up to 256 colors, are:
         ["cividis", "grey", "gray", "inferno", "magma", "viridis",
-        "Greys256", "Inferno256", "Magma256", "Plasma256", "Viridis256",
-        "Cividis256", "Turbo256"]
+        "Greys", "Inferno", "Magma", "Plasma", "Viridis",
+        "Cividis", "Turbo"]
         All avalailabe palettes can be found here:
         https://docs.bokeh.org/en/latest/docs/reference/palettes.html
 
@@ -78,8 +78,27 @@ class BokehGraphColorMap:
         Returns:
             list: A list of bokeh colors.
         """
-        if self.palette_name.endswith("256"):
-            palette = bokeh.palettes.all_palettes[self.palette_name]
+        if self.palette_name in (
+            "Greys",
+            "Inferno",
+            "Magma",
+            "Plasma",
+            "Viridis",
+            "Cividis",
+            "Turbo",
+        ):
+            try:
+                palette = bokeh.palettes.all_palettes[self.palette_name][
+                    self.max_colors
+                ]
+            except KeyError:
+                palette = bokeh.palettes.all_palettes[self.palette_name][256]
+                reduced = []
+                step = 256 // self.max_colors
+                for i in range(0, 255, step):
+                    reduced.append(palette[i])
+                return reduced[: self.max_colors]
+
         elif self.palette_name == "numeric":
             palette = []
             i = 0
