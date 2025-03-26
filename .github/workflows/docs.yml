@@ -1,0 +1,47 @@
+name: Build Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
+      - name: Check out repository
+        uses: actions/checkout@v3
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+          python-version: "3.13"
+      #----------------------------------------------
+      # ------ install dependencies ----------------
+      #----------------------------------------------
+      - name: Install pandoc
+        uses: pandoc/actions/setup@v1
+      - name: Install dependencies
+        run: uv sync --only-group docs
+      #----------------------------------------------
+      # run sphinx
+      #----------------------------------------------
+      - name: Build documentation
+        run: |
+          mkdir gh-pages
+          touch gh-pages/.nojekyll
+          cd docs/
+          uv run sphinx-build -b html . _build
+          cp -r _build/* ../gh-pages/
+      #----------------------------------------------
+      # deploy to gh-pages
+      #----------------------------------------------
+      - name: Deploy documentation
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: gh-pages

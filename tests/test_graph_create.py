@@ -4,7 +4,6 @@ from bokeh.io import export_png
 import networkx as nx
 import pytest
 
-from bokehgraph import BokehBipartiteGraph
 from bokehgraph import BokehGraph
 
 
@@ -23,7 +22,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
         hover_edges=hover_edges,
     )
     plot.layout(shrink_factor=1, seed=2)
-    figure = plot.render(
+    figure = plot.draw(
         node_color="degree",
         node_palette="Category20",
         node_size=18,
@@ -33,7 +32,8 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
         edge_palette="Viridis",
         edge_size=1,
         edge_alpha=0.17,
-        max_colors=2,
+        node_max_colors=2,
+        return_figure=True,
     )
 
     test_img = tmp_path / "test_img.png"
@@ -74,7 +74,7 @@ def test_edge_alpha_ordering(edges):
 
     plot = BokehGraph(graph, hover_edges=True)
 
-    figure = plot.render(
+    figure = plot.draw(
         node_size="age",
         node_palette="viridis",
         node_alpha=0.9,
@@ -82,11 +82,12 @@ def test_edge_alpha_ordering(edges):
         node_marker="circle",
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
+        node_max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
+        return_figure=True,
     )
-    edge_data = figure.renderers[0].data_source.data
+    edge_data = figure.renderers[0].edge_renderer.data_source.data
     sorted_weights = sorted(edge_data["weight"])
     sorted_alphas = sorted(edge_data["_edge_alpha"])
     rank_weights = [sorted_weights.index(i) for i in edge_data["weight"]]
@@ -101,7 +102,7 @@ def test_graph_without_edges():
     graph.add_node(2)
 
     plot = BokehGraph(graph, hover_edges=True)
-    figure = plot.render(
+    figure = plot.draw(
         node_size="age",
         node_palette="viridis",
         node_alpha=0.9,
@@ -109,12 +110,13 @@ def test_graph_without_edges():
         node_marker="circle",
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
+        node_max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
+        return_figure=True,
     )
-    node_data = figure.renderers[0].data_source.data
-    assert len(node_data["xs"]) == 2
+    node_data = figure.renderers[0].node_renderer.data_source.data
+    assert len(node_data["index"]) == 2
 
     with pytest.raises(IndexError):
         # assert that there is only 1 renderer
@@ -126,33 +128,29 @@ def test_bipartite_graph_without_edges():
     graph.add_node("agent", bipartite=0)
     graph.add_node("loc", bipartite=1)
 
-    plot = BokehBipartiteGraph(graph, hover_edges=True)
-    figure = plot.render(
-        node_size_lv0="firebrick",
-        node_palette_lv0="viridis",
-        node_alpha_lv0=0.9,
-        node_color_lv0="firebrick",
-        node_size_lv1="firebrick",
-        node_palette_lv1="viridis",
-        node_alpha_lv1=0.9,
-        node_color_lv1="firebrick",
-        node_marker_lv0="circle",
-        node_marker_lv1="square",
+    plot = BokehGraph(graph, hover_edges=True, bipartite=True)
+    figure = plot.draw(
+        node_size="age",
+        node_palette="viridis",
+        node_alpha=0.9,
+        node_color="age",
+        node_marker=("circle", "square"),
+        node_max_colors=256,
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
+        return_figure=True,
     )
 
-    node_data_lv0 = figure.renderers[0].data_source.data
-    node_data_lv1 = figure.renderers[1].data_source.data
-    assert len(node_data_lv0["xs"]) == 1
-    assert len(node_data_lv1["xs"]) == 1
+    node_data_lv0 = figure.renderers[0].node_renderer.data_source.data
+    node_data_lv1 = figure.renderers[1].node_renderer.data_source.data
+    assert len(node_data_lv0["index"]) == 1
+    assert len(node_data_lv1["index"]) == 1
 
     with pytest.raises(IndexError):
         # make sure there are only to renderers
-        _ = figure.renderers[2].data_source
+        _ = figure.renderers[3].data_source
 
 
 def test_graph_bipartite():
@@ -169,39 +167,36 @@ def test_graph_bipartite():
     graph.add_edge("loc2", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehBipartiteGraph(
+    plot = BokehGraph(
         graph,
         width=200,
         height=200,
         inline=False,
         hover_nodes=True,
         hover_edges=True,
+        bipartite=True,
     )
     plot.layout(shrink_factor=1, seed=2)
-    figure = plot.render(
-        node_color_lv0="firebrick",
-        node_palette_lv0="Category20",
-        node_size_lv0=9,
-        node_alpha_lv0=0.7,
-        node_color_lv1="firebrick",
-        node_palette_lv1="Category20",
-        node_size_lv1=9,
-        node_alpha_lv1=0.7,
-        node_marker_lv0="circle",
-        node_marker_lv1="square",
+    figure = plot.draw(
+        node_color="firebrick",
+        node_palette="Category20",
+        node_size=9,
+        node_alpha=0.7,
+        node_marker=("circle", "square"),
         edge_color="navy",
         edge_palette="viridis",
         edge_alpha=0.3,
         edge_size=1,
-        max_colors=-1,
+        node_max_colors=-1,
+        return_figure=True,
     )
 
-    edge_data = figure.renderers[0].data_source.data
-    node_data_lv0 = figure.renderers[1].data_source.data
-    node_data_lv1 = figure.renderers[2].data_source.data
-    assert len(edge_data["xs"]) == 4
-    assert len(node_data_lv0["xs"]) == 3
-    assert len(node_data_lv1["xs"]) == 2
+    edge_data = figure.renderers[0].edge_renderer.data_source.data
+    node_data_lv0 = figure.renderers[1].node_renderer.data_source.data
+    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
+    assert len(edge_data["start"]) == 4
+    assert len(node_data_lv0["index"]) == 3
+    assert len(node_data_lv1["index"]) == 2
 
 
 def test_graph_bipartite_not_connected():
@@ -217,39 +212,36 @@ def test_graph_bipartite_not_connected():
     graph.add_edge("loc1", "agent2")
     graph.add_edge("loc2", "agent3")
 
-    plot = BokehBipartiteGraph(
+    plot = BokehGraph(
         graph,
         width=200,
         height=200,
         inline=False,
         hover_nodes=True,
         hover_edges=True,
+        bipartite=True,
     )
     plot.layout(shrink_factor=1, seed=2)
-    figure = plot.render(
-        node_color_lv0="age",
-        node_color_lv1="food",
-        node_palette_lv0="viridis",
-        node_palette_lv1="Category20",
-        node_size_lv0=26,
-        node_size_lv1=26,
-        node_alpha_lv0=0.9,
-        node_alpha_lv1=0.9,
-        node_marker_lv0="circle",
-        node_marker_lv1="square",
+    figure = plot.draw(
+        node_color=("age", "food"),
+        node_palette=("viridis", "Category20"),
+        node_size=26,
+        node_alpha=0.9,
+        node_marker=("circle", "square"),
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
+        return_figure=True,
     )
 
-    edge_data = figure.renderers[0].data_source.data
-    node_data_lv0 = figure.renderers[1].data_source.data
-    node_data_lv1 = figure.renderers[2].data_source.data
-    assert len(edge_data["xs"]) == 3
-    assert len(node_data_lv0["xs"]) == 3
-    assert len(node_data_lv1["xs"]) == 2
+    edge_data = figure.renderers[0].edge_renderer.data_source.data
+    node_data_lv0 = figure.renderers[1].node_renderer.data_source.data
+    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
+    assert len(edge_data["start"]) == 3
+    assert len(node_data_lv0["index"]) == 3
+    assert len(node_data_lv1["index"]) == 2
 
 
 def test_removed_bipartite_attr():
@@ -275,7 +267,7 @@ def test_removed_bipartite_attr():
         hover_edges=True,
     )
     plot.layout(shrink_factor=1, seed=2)
-    figure = plot.render(
+    figure = plot.draw(
         node_palette="Category20",
         node_size=26,
         node_marker="circle",
@@ -285,13 +277,14 @@ def test_removed_bipartite_attr():
         node_alpha=0.9,
         node_color="firebrick",
         edge_color="navy",
-        max_colors=2,
+        node_max_colors=2,
+        return_figure=True,
     )
 
-    edge_data = figure.renderers[0].data_source.data
-    node_data = figure.renderers[1].data_source.data
-    assert len(edge_data["xs"]) == 4
-    assert len(node_data["xs"]) == 5
+    edge_data = figure.renderers[0].edge_renderer.data_source.data
+    node_data = figure.renderers[1].node_renderer.data_source.data
+    assert len(edge_data["start"]) == 4
+    assert len(node_data["index"]) == 5
 
 
 def test_bipartite_node_color_single_level(tmp_path, image_regression):
@@ -305,23 +298,26 @@ def test_bipartite_node_color_single_level(tmp_path, image_regression):
     g.add_edge(2, 3)
     g.add_edge(2, 4)
 
-    plot = BokehBipartiteGraph(g, width=500, height=500, hover_edges=True)
-    figure = plot.render(
-        node_color_lv0="gender",
-        node_color_lv1="firebrick",
-        node_palette_lv0="viridis",
-        node_palette_lv1="Category20",
-        node_size_lv0=20,
-        node_size_lv1=20,
-        node_alpha_lv0=0.9,
-        node_alpha_lv1=0.9,
-        node_marker_lv0="circle",
-        node_marker_lv1="square",
+    plot = BokehGraph(
+        g,
+        width=500,
+        height=500,
+        hover_edges=True,
+        bipartite=True,
+        inline=False,
+    )
+    figure = plot.draw(
+        node_color=("gender", "firebrick"),
+        node_palette=("viridis", "Category20"),
+        node_size=20,
+        node_alpha=0.9,
+        node_marker=("circle", "square"),
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
+        return_figure=True,
     )
 
     test_img = tmp_path / "test_img.png"
@@ -351,23 +347,26 @@ def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regres
     g.add_edge(2, 3)
     g.add_edge(2, 4)
 
-    plot = BokehBipartiteGraph(g, width=500, height=500, hover_edges=True)
-    figure = plot.render(
-        node_color_lv0="gender",
-        node_color_lv1="gender",
-        node_palette_lv0="viridis",
-        node_palette_lv1="Category20",
-        node_size_lv0=20,
-        node_size_lv1=20,
-        node_alpha_lv0=0.9,
-        node_alpha_lv1=0.9,
-        node_marker_lv0="circle",
-        node_marker_lv1="square",
+    plot = BokehGraph(
+        g,
+        width=500,
+        height=500,
+        hover_edges=True,
+        inline=False,
+        bipartite=True,
+    )
+    figure = plot.draw(
+        node_color="gender",
+        node_palette=("viridis", "Category20"),
+        node_size=20,
+        node_alpha=0.8,
+        node_marker=("circle", "square"),
         edge_color="navy",
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
+        return_figure=True,
     )
 
     test_img = tmp_path / "test_img.png"
@@ -417,32 +416,35 @@ def test_keep_property_order_world_graph():
         graph.add_edge(u, v, **attrs)
 
     graph_layout = nx.drawing.spring_layout(graph)
-    plot = BokehBipartiteGraph(graph, width=400, height=400, hover_edges=True)
+    plot = BokehGraph(
+        graph,
+        width=400,
+        height=400,
+        hover_edges=True,
+        bipartite=True,
+        inline=False,
+    )
     plot.layout(layout=graph_layout)
 
-    out = plot.render(
-        node_color_lv0="firebrick",
-        node_palette_lv0="Category20",
-        node_size_lv0=9,
-        node_alpha_lv0=0.7,
-        node_marker_lv0="circle",
-        node_color_lv1="firebrick",
-        node_palette_lv1="Category20",
-        node_size_lv1=9,
-        node_alpha_lv1=0.7,
-        node_marker_lv1="square",
+    figure = plot.draw(
+        node_color="firebrick",
+        node_palette="Category20",
+        node_size=9,
+        node_alpha=0.7,
+        node_marker=("circle", "square"),
         edge_color="navy",
         edge_palette="viridis",
         edge_alpha=0.3,
         edge_size=1,
-        max_colors=-1,
+        node_max_colors=-1,
+        return_figure=True,
     )
 
     exp_types = [
         attr["type"] for node, attr in graph.nodes(data=True) if attr["bipartite"] == 1
     ]
 
-    node_data_lv1 = out.renderers[2].data_source.data
+    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
     types = node_data_lv1["type"]
 
     assert exp_types == types
