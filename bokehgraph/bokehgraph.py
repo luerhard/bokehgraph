@@ -22,13 +22,9 @@ class ParamDict:
     _node_marker: str | Iterable[str]
     _node_size: int | Iterable[int]
     _node_color: str | Iterable[str]
-    _node_alpha: int | Iterable[int]
     _node_palette: str | Iterable[str]
-    _edge_size: int | Iterable[int]
-    _edge_color: str | Iterable[str]
-    _edge_alpha: int | Iterable[int]
-    _edge_palette: str | Iterable[str]
-    _max_colors: int | Iterable[int]
+    _node_max_colors: int | Iterable[int]
+    _node_alpha: float | Iterable[float]
 
     def __getattr__(self, name):
         _attr = getattr(self, f"_{name}")
@@ -38,37 +34,31 @@ class ParamDict:
 
 
 class BokehGraph:
-    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph()).
-
-    working example:
-    import networkx as nx
-    graph = nx.barbell_graph(5,6)
-    degrees = nx.degree(graph)
-    nx.set_node_attributes(graph, dict(degrees), "degree")
-    plot = BokehGraph(graph, width=800, height=600, inline=True)
-    plot.layout(shrink_factor = 0.6)
-    plot.draw(node_color="degree", palette="Category20", max_colors=2)
-
-
-    The plot is drawn by BokehGraph.draw(node_color="firebrick")
-        - node_color, line_color can be set to every value that bokeh
-          recognizes, including a bokeh.colors.RGB instance. serveral other
-          parameters can be found in the .draw method.
-
-
-    """
+    """This is instanciated with a (one-mode) networkx graph object with BokehGraph(nx.Graph())."""
 
     def __init__(
         self,
         graph,
-        width=800,
+        width=600,
         height=600,
         inline=True,
-        hover_nodes=False,
-        hover_edges=True,
+        hover_nodes=True,
+        hover_edges=False,
         bipartite=False,
-        _testing=False,
     ):
+        """Create a BokehGraph object.
+
+        Args:
+            graph (nx.Graph): The graph to be plotted.
+            width (int, optional): Width of the figure. Defaults to 600.
+            height (int, optional): Height of the figure. Defaults to 600.
+            inline (bool, optional): If true, inlines the figure in a jupyter notebook. Creates a
+                new tab in the browser to display it there instead if false.
+                Defaults to True.
+            hover_nodes (bool, optional): Enable hover tool for nodes. Defaults to True.
+            hover_edges (bool, optional): Enable hover tool for edges. Defaults to False.
+            bipartite (bool, optional): Plot graph as bipartite graph. Defaults to False.
+        """
         self.graph = graph
 
         self.width = width
@@ -128,7 +118,7 @@ class BokehGraph:
         return {attr for _, _, data in graph.edges(data=True) for attr in data}
 
     def _edge_tooltips(self, graph):
-        edge_tooltips = [("_type", "edge"), ("_u", "@_u"), ("_v", "@_v")]
+        edge_tooltips = [("_type", "edge"), ("u", "@_u"), ("v", "@_v")]
         for attr in self._edge_attrs(graph):
             edge_tooltips.append((attr, f"@{attr}"))
         return edge_tooltips
@@ -139,7 +129,7 @@ class BokehGraph:
         return {attr for _, data in graph.nodes(data=True) for attr in data}
 
     def _node_tooltips(self, graph):
-        node_tooltips = [("_type", "node"), ("index", "@index")]
+        node_tooltips = [("_type", "node"), ("name", "@index")]
         for attr in self._node_attrs(graph):
             if attr != "bipartite":
                 node_tooltips.append((attr, f"@{attr}"))
@@ -271,29 +261,78 @@ class BokehGraph:
 
     def draw(
         self,
-        node_marker="circle",
-        node_size=9,
-        node_color="firebrick",
+        node_marker=("circle", "square"),
+        node_size=12,
+        node_color=("firebrick", "steelblue"),
         node_alpha=0.9,
         node_palette="Category20",
-        edge_size=1,
+        node_max_colors=-1,
+        edge_size=2,
         edge_color="navy",
         edge_alpha=0.6,
         edge_palette="viridis",
-        max_colors=-1,
+        edge_max_colors=-1,
         return_figure=False,
     ):
+        """Create the actual visualization.
+
+        Args:
+            node_marker (str | tuple[str], optional): Defines the shape of the nodes.
+                A list of possible values can be found here:
+                https://docs.bokeh.org/en/latest/docs/examples/basic/scatters/markers.html.
+                Defaults to ("circle", "square").
+            node_size (int | str | tuple[int | str], optional): Set the size of the nodes.
+                If it is an integer, all nodes get that size. If it is the name of a node attribute,
+                node size will be set according to this attribute.
+                Defaults to 12.
+            node_color (str | tuple[str], optional): Set the color of the nodes. If it is a name
+                of a color or a hex value, all nodes will have that color. If it is the name of a
+                node attribute, nodes will be colored according to that attribute.
+                Defaults to ("firebrick", "steelblue").
+            node_alpha (float | str | tuple[float | str], optional): Set the alpha value for nodes.
+                If it is a float, all nodes get that value. If it is a node attribute, alpha will be
+                set according to that attribute.
+                Defaults to 0.9.
+            node_palette (str | tuple[str], optional): Set palettes to choose node colors from. See
+                Colormap for a list of possible palettes.
+                Defaults to "Category20".
+            node_max_colors (int | tuple[int], optional): Set the maximum number of colors to use
+                for node attributes. Also applies to number of different values for node_alpha and
+                node_size.
+                Defaults to -1 which is to use all available colors of a palette.
+            edge_size (int | str | tuple[int | str], optional): Set the width of the edges.
+                If it is an integer, all edges get that width. If it is the name of a edge
+                attribute, edge size will be set according to this attribute.
+                Defaults to 2.
+            edge_color (str | tuple[str], optional): Set the color of the edges. If it is a name
+                of a color or a hex value, all edges will have that color. If it is the name of a
+                edge attribute, edges will be colored according to that attribute.
+                Defaults to "navy".
+            edge_alpha (float | str | tuple[float | str], optional): Set the alpha value for edges.
+                If it is a float, all edges get that value. If it is a edge attribute, alpha will be
+                set according to that attribute.
+                Defaults to 0.6.
+            edge_palette (str | tuple[str], optional): Set palette to choose edge colors from. See
+                Colormap for a list of possible palettes.
+                Defaults to "viridis".
+            edge_max_colors (int | tuple[int], optional): Set the maximum number of colors to use
+                for edge attributes. Also applies to number of different values for edge_alpha and
+                edge_size.
+                Defaults to -1 which is to use all available colors of a palette.
+            return_figure (bool, optional): Return bokeh figure object instead of displaying the
+                graph. Useful if you want to save the plot or modify it further.
+                Defaults to False.
+
+        Returns:
+            bokeh.plotting.figure | None: Optional return of the figure if return_figure is set.
+        """
         params = ParamDict(
             _node_marker=node_marker,
             _node_size=node_size,
             _node_color=node_color,
-            _node_alpha=node_alpha,
             _node_palette=node_palette,
-            _edge_size=edge_size,
-            _edge_color=edge_color,
-            _edge_palette=edge_palette,
-            _edge_alpha=edge_alpha,
-            _max_colors=max_colors,
+            _node_max_colors=node_max_colors,
+            _node_alpha=node_alpha,
         )
 
         figure = self._prepare_figure()
@@ -309,7 +348,7 @@ class BokehGraph:
                 palette=edge_palette,
                 alpha=edge_alpha,
                 size=edge_size,
-                max_colors=max_colors,
+                max_colors=edge_max_colors,
             )
 
         if self.graph.nodes:
@@ -322,7 +361,7 @@ class BokehGraph:
                     size=params.node_size[0],
                     color=params.node_color[0],
                     palette=params.node_palette[0],
-                    max_colors=params.max_colors[0],
+                    max_colors=params.node_max_colors[0],
                 )
             else:
                 level_0_nodes = (
@@ -345,7 +384,7 @@ class BokehGraph:
                     size=params.node_size[0],
                     color=params.node_color[0],
                     palette=params.node_palette[0],
-                    max_colors=params.max_colors[0],
+                    max_colors=params.node_max_colors[0],
                 )
                 figure = self._render_nodes(
                     figure=figure,
@@ -355,7 +394,7 @@ class BokehGraph:
                     size=params.node_size[1],
                     color=params.node_color[1],
                     palette=params.node_palette[1],
-                    max_colors=params.max_colors[1],
+                    max_colors=params.node_max_colors[1],
                 )
 
         if return_figure:

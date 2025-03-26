@@ -32,7 +32,7 @@ def test_barbell_plot_png(hover_nodes, hover_edges, tmp_path, image_regression):
         edge_palette="Viridis",
         edge_size=1,
         edge_alpha=0.17,
-        max_colors=2,
+        node_max_colors=2,
         return_figure=True,
     )
 
@@ -82,7 +82,7 @@ def test_edge_alpha_ordering(edges):
         node_marker="circle",
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
+        node_max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
         return_figure=True,
@@ -110,7 +110,7 @@ def test_graph_without_edges():
         node_marker="circle",
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
+        node_max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
         return_figure=True,
@@ -135,9 +135,9 @@ def test_bipartite_graph_without_edges():
         node_alpha=0.9,
         node_color="age",
         node_marker=("circle", "square"),
+        node_max_colors=256,
         edge_size=15,
         edge_color="navy",
-        max_colors=256,
         edge_palette="numeric",
         edge_alpha="weight",
         return_figure=True,
@@ -187,7 +187,7 @@ def test_graph_bipartite():
         edge_palette="viridis",
         edge_alpha=0.3,
         edge_size=1,
-        max_colors=-1,
+        node_max_colors=-1,
         return_figure=True,
     )
 
@@ -232,7 +232,7 @@ def test_graph_bipartite_not_connected():
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
         return_figure=True,
     )
 
@@ -277,7 +277,7 @@ def test_removed_bipartite_attr():
         node_alpha=0.9,
         node_color="firebrick",
         edge_color="navy",
-        max_colors=2,
+        node_max_colors=2,
         return_figure=True,
     )
 
@@ -316,7 +316,7 @@ def test_bipartite_node_color_single_level(tmp_path, image_regression):
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
         return_figure=True,
     )
 
@@ -365,7 +365,7 @@ def test_bipartite_node_color_only_one_value_in_attribute(tmp_path, image_regres
         edge_size=10,
         edge_palette="Plasma",
         edge_alpha=0.5,
-        max_colors=2,
+        node_max_colors=2,
         return_figure=True,
     )
 
@@ -436,7 +436,7 @@ def test_keep_property_order_world_graph():
         edge_palette="viridis",
         edge_alpha=0.3,
         edge_size=1,
-        max_colors=-1,
+        node_max_colors=-1,
         return_figure=True,
     )
 

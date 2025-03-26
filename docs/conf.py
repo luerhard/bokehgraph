@@ -18,6 +18,7 @@ extensions = [
     "myst_parser",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
+    "nbsphinx",
 ]
 
 myst_enable_extensions = [
@@ -35,3 +36,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
