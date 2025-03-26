@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from collections import abc
 from dataclasses import dataclass
-from functools import lru_cache
 from math import sqrt
 from typing import Iterable
-import warnings
 
 import bokeh.io
 from bokeh.models import HoverTool
@@ -15,22 +13,46 @@ import bokeh.plotting
 import networkx as nx
 
 from .colormap import BokehGraphColorMap
+from .colormap import BokehGraphColorMapBipartite
 
 
 @dataclass
 class ParamDict:
+    graph: nx.Graph
     _node_marker: str | Iterable[str]
     _node_size: int | Iterable[int]
     _node_color: str | Iterable[str]
     _node_palette: str | Iterable[str]
     _node_max_colors: int | Iterable[int]
     _node_alpha: float | Iterable[float]
+    _edge_size: int | Iterable[int]
+    _edge_color: str | Iterable[str]
+    _edge_palette: str | Iterable[str]
+    _edge_max_colors: int | Iterable[int]
+    _edge_alpha: float | Iterable[float]
+
+    def __post_init__(self):
+        self.graph_node_attrs = {attr for _, data in self.graph.nodes(data=True) for attr in data}
+        self.graph_edge_attrs = {
+            attr for _, _, data in self.graph.edges(data=True) for attr in data
+        }
 
     def __getattr__(self, name):
         _attr = getattr(self, f"_{name}")
-        if isinstance(_attr, abc.Iterable) and not isinstance(_attr, str):
+        if name.startswith("edge") or (
+            isinstance(_attr, abc.Iterable) and not isinstance(_attr, str)
+        ):
             return _attr
         return (_attr, _attr)
+
+    def is_node_attr(self, name):
+        if isinstance(name, abc.Iterable) and not isinstance(name, str):
+            return (name[0] in self.graph_node_attrs, name[1] in self.graph_node_attrs)
+        else:
+            return (name in self.graph_node_attrs,) * 2
+
+    def is_edge_attr(self, name):
+        return (name in self.graph_edge_attrs,)
 
 
 class BokehGraph:
@@ -71,6 +93,8 @@ class BokehGraph:
 
         self._layout = None
 
+        self._levels = {data.get("bipartite") for _, data in graph.nodes(data=True)}
+
         # inline for jupyter notebooks
         if inline:
             bokeh.io.output_notebook(hide_banner=True)
@@ -101,39 +125,55 @@ class BokehGraph:
         elif not layout and self.bipartite:
             self._layout = nx.bipartite_layout(
                 self.graph,
-                (
-                    node
-                    for node, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 0
-                ),
+                (node for node, data in self.graph.nodes(data=True) if data["bipartite"] == 0),
                 align="horizontal",
             )
         else:
             self._layout = layout
         return
 
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def _edge_attrs(graph):
-        return {attr for _, _, data in graph.edges(data=True) for attr in data}
-
-    def _edge_tooltips(self, graph):
-        edge_tooltips = [("_type", "edge"), ("u", "@_u"), ("v", "@_v")]
-        for attr in self._edge_attrs(graph):
+    def _edge_tooltips(self, params):
+        edge_tooltips = [("start", "@start"), ("end", "@end")]
+        for attr in params.graph_edge_attrs:
             edge_tooltips.append((attr, f"@{attr}"))
         return edge_tooltips
 
-    @staticmethod
-    @lru_cache(maxsize=3)
-    def _node_attrs(graph):
-        return {attr for _, data in graph.nodes(data=True) for attr in data}
-
-    def _node_tooltips(self, graph):
-        node_tooltips = [("_type", "node"), ("name", "@index")]
-        for attr in self._node_attrs(graph):
+    def _node_tooltips(self, params):
+        node_tooltips = [("index", "@index")]
+        for attr in params.graph_node_attrs:
             if attr != "bipartite":
                 node_tooltips.append((attr, f"@{attr}"))
         return node_tooltips
+
+    def tooltip_css(self, renderer, render_data):
+        css = "<div><table>"
+        row = """
+        <td style='text-align: right;color: #4682b4;'>{name}</td>
+        <td>:</td>
+        <td style='text-align: left;'>{index}</td>
+        """
+        col = """
+        <tr style='display:@{{{name}_display}};'>
+        {row}
+        </tr>
+        """
+        for render_name, tooltips in render_data:
+            for name, index in tooltips:
+                data = getattr(renderer, render_name).data_source.data.get(name)
+                if render_name == "node_renderer":
+                    render_other = "edge_renderer"
+                else:
+                    render_other = "node_renderer"
+                getattr(renderer, render_name).data_source.data[f"{name}_display"] = [
+                    "none" if val is None else 1 for val in data
+                ]
+                n_data = len(next(iter(getattr(renderer, render_other).data_source.data.values())))
+                getattr(renderer, render_other).data_source.data[f"{name}_display"] = [
+                    "none",
+                ] * n_data
+                css += col.format(row=row.format(name=name, index=index), name=name)
+        css += "</table></div>"
+        return css
 
     def _prepare_figure(self):
         fig = bokeh.plotting.figure(
@@ -148,116 +188,118 @@ class BokehGraph:
         fig.ygrid.grid_line_color = None
         return fig
 
-    def _render_nodes(
-        self,
-        figure,
-        graph,
-        marker,
-        alpha,
-        size,
-        color,
-        palette,
-        max_colors,
-    ):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message="Node keys in 'layout_function' don't match node keys.*",
-                category=UserWarning,
+    def _get_node_attr(self, attr):
+        return [
+            (
+                data.get("bipartite", 0),
+                data.get(attr[data.get("bipartite", 0)], attr[data.get("bipartite", 0)]),
             )
-            graph_renderer = bokeh.plotting.from_networkx(graph, self._layout)
+            for _, data in self.graph.nodes(data=True)
+        ]
 
-        if color in self._node_attrs(graph):
-            colormap = BokehGraphColorMap(palette, max_colors)
-            cmap = colormap.map(
-                nx.get_node_attributes(graph, color, default=color).values(),
-            )
-            graph_renderer.node_renderer.data_source.data["_colormap"] = cmap
-            color = "_colormap"
+    def _get_edge_attr(self, attr):
+        return nx.get_edge_attributes(self.graph, attr)
 
-        graph_renderer.node_renderer.glyph = Scatter(
-            marker=marker,
-            fill_color=color,
-            line_color=color,
-            line_alpha=alpha,
-            fill_alpha=alpha,
-            size=size,
+    def _map_node_attr(self, attr):
+        return [attr[data.get("bipartite", 0)] for _, data in self.graph.nodes(data=True)]
+
+    def _render_nodes(self, renderer, params):
+        renderer.node_renderer.data_source.data["_marker"] = self._map_node_attr(params.node_marker)
+
+        map_ = BokehGraphColorMapBipartite(
+            palette=params.node_palette,
+            n=len(self._levels),
+            max_colors=params.node_max_colors,
+            is_attr=params.is_node_attr(params.node_color),
         )
-        graph_renderer.edge_renderer.glyph.line_alpha = 0
+        node_vals = self._get_node_attr(params.node_color)
+        values = map_.map(node_vals)
+        renderer.node_renderer.data_source.data["_color"] = values
 
-        if self.hover_nodes:
-            tooltips = self._node_tooltips(graph)
-            formatter = {tip: "printf" for tip, _ in tooltips}
-            hovertool = HoverTool(
-                tooltips=tooltips,
-                formatters=formatter,
-                renderers=[graph_renderer.node_renderer],
-                line_policy="interp",
-            )
-            figure.add_tools(hovertool)
-
-        figure.renderers.append(graph_renderer)
-        return figure
-
-    def _render_edges(
-        self,
-        figure,
-        graph,
-        color,
-        palette,
-        size,
-        alpha,
-        max_colors,
-    ):
-        graph_renderer = bokeh.plotting.from_networkx(graph, self._layout)
-
-        if color in self._edge_attrs(graph):
-            colormap = BokehGraphColorMap(palette, max_colors)
-            cmap = colormap.map(
-                nx.get_edge_attributes(self.graph, color, default=color).values(),
-            )
-            graph_renderer.edge_renderer.data_source.data["_edge_color"] = cmap
-            color = "_edge_color"
-
-        if alpha in self._edge_attrs(graph):
-            colormap = BokehGraphColorMap("numeric", max_colors)
-            cmap = colormap.map(
-                nx.get_edge_attributes(self.graph, alpha, default=alpha).values(),
-            )
-            graph_renderer.edge_renderer.data_source.data["_edge_alpha"] = cmap
-            alpha = "_edge_alpha"
-
-        if size in self._edge_attrs(graph):
-            colormap = BokehGraphColorMap("numeric", max_colors)
-            graph_renderer.edge_renderer.data_source.data["_edge_size"] = colormap.map(
-                nx.get_edge_attributes(self.graph, size, default=size).values(),
-            )
-            size = "_edge_size"
-
-        graph_renderer.edge_renderer.glyph = MultiLine(
-            line_color=color,
-            line_alpha=alpha,
-            line_width=size,
+        map_ = BokehGraphColorMapBipartite(
+            palette=("numeric", "numeric"),
+            n=len(self._levels),
+            max_colors=params.node_max_colors,
+            is_attr=params.is_node_attr(params.node_alpha),
         )
-        graph_renderer.node_renderer.glyph.line_alpha = 0
-        graph_renderer.node_renderer.glyph.fill_alpha = 0
+        node_vals = self._get_node_attr(params.node_alpha)
+        values = map_.map(node_vals)
+        renderer.node_renderer.data_source.data["_alpha"] = values
 
-        if self.hover_edges:
-            tooltips = self._edge_tooltips(self.graph)
-            formatter = {tip: "printf" for tip, _ in tooltips}
-            us, vs = zip(*self.graph.edges())
-            graph_renderer.edge_renderer.data_source.data["_u"] = us
-            graph_renderer.edge_renderer.data_source.data["_v"] = vs
-            hovertool = HoverTool(
-                tooltips=tooltips,
-                formatters=formatter,
-                renderers=[graph_renderer.edge_renderer],
-                line_policy="interp",
+        map_ = BokehGraphColorMapBipartite(
+            palette=("numeric", "numeric"),
+            n=len(self._levels),
+            max_colors=params.node_max_colors,
+            is_attr=params.is_node_attr(params.node_size),
+        )
+        node_vals = self._get_node_attr(params.node_size)
+        values = map_.map(node_vals)
+        renderer.node_renderer.data_source.data["_size"] = values
+
+        renderer.node_renderer.glyph = Scatter(
+            marker="_marker",
+            fill_color="_color",
+            line_color="_color",
+            line_alpha="_alpha",
+            fill_alpha="_alpha",
+            size="_size",
+        )
+
+        return renderer
+
+    def _render_edges(self, renderer, params):
+        if params.is_edge_attr(params.edge_color):
+            colormap = BokehGraphColorMap(params.edge_palette, params.edge_max_colors)
+            values = colormap.map_iter(
+                nx.get_edge_attributes(
+                    self.graph,
+                    params.edge_color,
+                    default=params.edge_color,
+                ).values(),
             )
-            figure.add_tools(hovertool)
+            renderer.edge_renderer.data_source.data["_color"] = values
+        else:
+            renderer.edge_renderer.data_source.data["_color"] = [
+                params.edge_color,
+            ] * nx.number_of_edges(self.g)
 
-        figure.renderers.append(graph_renderer)
-        return figure
+        if params.is_edge_attr(params.edge_alpha):
+            colormap = BokehGraphColorMap("numeric", params.edge_max_colors)
+            values = colormap.map_iter(
+                nx.get_edge_attributes(
+                    self.graph,
+                    params.edge_alpha,
+                    default=params.edge_alpha,
+                ).values(),
+            )
+            renderer.edge_renderer.data_source.data["_alpha"] = values
+        else:
+            renderer.edge_renderer.data_source.data["_alpha"] = [
+                params.edge_alpha,
+            ] * nx.number_of_edges(self.g)
+
+        if params.is_edge_attr(params.edge_size):
+            colormap = BokehGraphColorMap("numeric", params.edge_max_colors)
+            values = colormap.map_iter(
+                nx.get_edge_attributes(
+                    self.graph,
+                    params.edge_size,
+                    default=params.edge_size,
+                ).values(),
+            )
+            renderer.edge_renderer.data_source.data["_size"] = values
+        else:
+            renderer.edge_renderer.data_source.data["_size"] = [
+                params.edge_size,
+            ] * nx.number_of_edges(self.g)
+
+        renderer.edge_renderer.glyph = MultiLine(
+            line_color="_color",
+            line_alpha="_alpha",
+            line_width="_size",
+        )
+
+        return renderer
 
     def draw(
         self,
@@ -327,12 +369,18 @@ class BokehGraph:
             bokeh.plotting.figure | None: Optional return of the figure if return_figure is set.
         """
         params = ParamDict(
+            graph=self.graph,
             _node_marker=node_marker,
             _node_size=node_size,
             _node_color=node_color,
             _node_palette=node_palette,
             _node_max_colors=node_max_colors,
             _node_alpha=node_alpha,
+            _edge_size=edge_size,
+            _edge_color=edge_color,
+            _edge_palette=edge_palette,
+            _edge_max_colors=edge_max_colors,
+            _edge_alpha=edge_alpha,
         )
 
         figure = self._prepare_figure()
@@ -340,62 +388,33 @@ class BokehGraph:
         if not self._layout:
             self.layout()
 
+        renderer = bokeh.plotting.from_networkx(self.graph, self._layout)
+
         if self.graph.edges:
-            figure = self._render_edges(
-                figure=figure,
-                graph=self.graph,
-                color=edge_color,
-                palette=edge_palette,
-                alpha=edge_alpha,
-                size=edge_size,
-                max_colors=edge_max_colors,
-            )
+            renderer = self._render_edges(renderer=renderer, params=params)
 
         if self.graph.nodes:
-            if not self.bipartite:
-                figure = self._render_nodes(
-                    figure=figure,
-                    graph=self.graph,
-                    marker=params.node_marker[0],
-                    alpha=params.node_alpha[0],
-                    size=params.node_size[0],
-                    color=params.node_color[0],
-                    palette=params.node_palette[0],
-                    max_colors=params.node_max_colors[0],
-                )
-            else:
-                level_0_nodes = (
-                    node
-                    for node, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 0
-                )
-                level_1_nodes = (
-                    node
-                    for node, data in self.graph.nodes(data=True)
-                    if data["bipartite"] == 1
-                )
-                level_0_subgraph = self.graph.subgraph(level_0_nodes)
-                level_1_subgraph = self.graph.subgraph(level_1_nodes)
-                figure = self._render_nodes(
-                    figure,
-                    level_0_subgraph,
-                    marker=params.node_marker[0],
-                    alpha=params.node_alpha[0],
-                    size=params.node_size[0],
-                    color=params.node_color[0],
-                    palette=params.node_palette[0],
-                    max_colors=params.node_max_colors[0],
-                )
-                figure = self._render_nodes(
-                    figure=figure,
-                    graph=level_1_subgraph,
-                    marker=params.node_marker[1],
-                    alpha=params.node_alpha[1],
-                    size=params.node_size[1],
-                    color=params.node_color[1],
-                    palette=params.node_palette[1],
-                    max_colors=params.node_max_colors[1],
-                )
+            renderer = self._render_nodes(renderer=renderer, params=params)
+
+        if self.hover_edges or self.hover_nodes:
+            tooltips_renderers = []
+            tooltips_render_data = []
+            if self.hover_edges:
+                tooltips = self._edge_tooltips(params)
+                tooltips_render_data.append(["edge_renderer", tooltips])
+                tooltips_renderers.append(renderer.edge_renderer)
+            if self.hover_nodes:
+                tooltips = self._node_tooltips(params)
+                tooltips_render_data.append(["node_renderer", tooltips])
+                tooltips_renderers.append(renderer.node_renderer)
+
+            hovertool = HoverTool(
+                tooltips=self.tooltip_css(renderer, tooltips_render_data),
+                renderers=tooltips_renderers,
+                line_policy="interp",
+            )
+            figure.add_tools(hovertool)
+        figure.renderers.append(renderer)
 
         if return_figure:
             return figure

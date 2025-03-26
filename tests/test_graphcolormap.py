@@ -1,6 +1,7 @@
 import pytest
 
 from bokehgraph.colormap import BokehGraphColorMap
+from bokehgraph.colormap import BokehGraphColorMapBipartite
 from bokehgraph.colormap import BokehGraphColorMapError
 
 
@@ -43,3 +44,17 @@ def test_numeric():
     colormap = BokehGraphColorMap("numeric", max_colors=257)
     palette = colormap.create_palette()
     assert len(palette) == 257
+
+
+def test_map_bipartite():
+    exp = ["#1f77b4", "#1f77b4", "#ff7f0e", "#440154", "#440154"]
+    colormap = BokehGraphColorMapBipartite(
+        palette=("Category20", "viridis"),
+        n=2,
+        max_colors=(2, 2),
+        is_attr=(True, True),
+    )
+    values = [(0, 1), (0, 1), (0, 2), (1, 1), (1, 1)]
+    result = colormap.map(values)
+
+    assert result == exp

@@ -88,9 +88,7 @@ class BokehGraphColorMap:
             "Turbo",
         ):
             try:
-                palette = bokeh.palettes.all_palettes[self.palette_name][
-                    self.max_colors
-                ]
+                palette = bokeh.palettes.all_palettes[self.palette_name][self.max_colors]
             except KeyError:
                 palette = bokeh.palettes.all_palettes[self.palette_name][256]
                 reduced = []
@@ -134,12 +132,10 @@ class BokehGraphColorMap:
                     palette = bokeh.palettes.all_palettes[self.palette_name][3]
                     palette = [palette[0], palette[-1]]
                 else:
-                    palette = bokeh.palettes.all_palettes[self.palette_name][
-                        self.max_colors
-                    ]
+                    palette = bokeh.palettes.all_palettes[self.palette_name][self.max_colors]
             except KeyError as e:
                 msg = (
-                    f"Palette {self.palette_name} does not exist or support "
+                    f"Palette {self.palette_name} does not exist or does not support "
                     f"{self.max_colors} colors !"
                 )
                 raise BokehGraphColorMapError(
@@ -147,7 +143,7 @@ class BokehGraphColorMap:
                 ) from e
         return palette
 
-    def map(self, color_attribute):
+    def _build_cmap(self, color_attribute):
         """Maps a color attribute.
 
         Args:
@@ -157,7 +153,7 @@ class BokehGraphColorMap:
             BokehGraphColorMapError: Raised if something went wrong.
 
         Returns:
-            Iterable: The mapped attribute.
+            Dict: The attribute map.
         """
         categories = set(color_attribute)
         n_categories = len(categories)
@@ -185,5 +181,33 @@ class BokehGraphColorMap:
                 (msg),
             )
         palette = self.create_palette()
-        colormap = self._color_map(set(color_map_values), palette)
-        return self._map_dict_to_iterable(colormap, color_map_values)
+        cmap = self._color_map(set(color_map_values), palette)
+        return cmap, color_map_values
+
+    def map_iter(self, color_attribute):
+        cmap, mapped_values = self._build_cmap(color_attribute)
+        return self._map_dict_to_iterable(cmap, mapped_values)
+
+    def map(self, color_attribute):
+        cmap, mapped_values = self._build_cmap(color_attribute)
+        value_map = {k: cmap[v] for k, v in zip(color_attribute, mapped_values)}
+        return value_map
+
+
+class BokehGraphColorMapBipartite:
+    def __init__(self, palette, is_attr, n=1, max_colors=(-1, -1)):
+        self.n = n
+        self.is_attr = is_attr
+        self.palette = list(palette)
+        self._map = {}
+        for i in range(n):
+            self._map[i] = BokehGraphColorMap(palette=self.palette[i], max_colors=max_colors[i])
+
+    def map(self, values):
+        levelmap = {}
+        for i in range(self.n):
+            if self.is_attr[i]:
+                levelmap[i] = self._map[i].map([val for level, val in values if level == i])
+            else:
+                levelmap[i] = {val: val for level, val in values}
+        return [levelmap[level][val] for level, val in values]

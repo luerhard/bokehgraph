@@ -36,6 +36,13 @@ docs = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.ruff]
+fix = true
+unsafe-fixes = true
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+target-version = "py312"
+line-length = 100
+
 [tool.ruff.lint.isort]
 force-single-line = true
 force-sort-within-sections = true

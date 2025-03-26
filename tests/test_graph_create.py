@@ -83,15 +83,16 @@ def test_edge_alpha_ordering(edges):
         edge_size=15,
         edge_color="navy",
         node_max_colors=256,
+        edge_max_colors=10,
         edge_palette="numeric",
         edge_alpha="weight",
         return_figure=True,
     )
     edge_data = figure.renderers[0].edge_renderer.data_source.data
     sorted_weights = sorted(edge_data["weight"])
-    sorted_alphas = sorted(edge_data["_edge_alpha"])
+    sorted_alphas = sorted(edge_data["_alpha"])
     rank_weights = [sorted_weights.index(i) for i in edge_data["weight"]]
-    rank_alphas = [sorted_alphas.index(i) for i in edge_data["_edge_alpha"]]
+    rank_alphas = [sorted_alphas.index(i) for i in edge_data["_alpha"]]
 
     assert rank_weights == rank_alphas
 
@@ -143,10 +144,9 @@ def test_bipartite_graph_without_edges():
         return_figure=True,
     )
 
-    node_data_lv0 = figure.renderers[0].node_renderer.data_source.data
-    node_data_lv1 = figure.renderers[1].node_renderer.data_source.data
-    assert len(node_data_lv0["index"]) == 1
-    assert len(node_data_lv1["index"]) == 1
+    node_data = figure.renderers[0].node_renderer.data_source.data
+    assert len([node for node in node_data["bipartite"] if node == 1]) == 1
+    assert len([node for node in node_data["bipartite"] if node == 0]) == 1
 
     with pytest.raises(IndexError):
         # make sure there are only to renderers
@@ -192,11 +192,10 @@ def test_graph_bipartite():
     )
 
     edge_data = figure.renderers[0].edge_renderer.data_source.data
-    node_data_lv0 = figure.renderers[1].node_renderer.data_source.data
-    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
+    node_data = figure.renderers[0].node_renderer.data_source.data
     assert len(edge_data["start"]) == 4
-    assert len(node_data_lv0["index"]) == 3
-    assert len(node_data_lv1["index"]) == 2
+    assert len([node for node in node_data["_marker"] if node == "circle"]) == 3
+    assert len([node for node in node_data["_marker"] if node == "square"]) == 2
 
 
 def test_graph_bipartite_not_connected():
@@ -237,11 +236,10 @@ def test_graph_bipartite_not_connected():
     )
 
     edge_data = figure.renderers[0].edge_renderer.data_source.data
-    node_data_lv0 = figure.renderers[1].node_renderer.data_source.data
-    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
+    node_data = figure.renderers[0].node_renderer.data_source.data
     assert len(edge_data["start"]) == 3
-    assert len(node_data_lv0["index"]) == 3
-    assert len(node_data_lv1["index"]) == 2
+    assert len([node for node in node_data["_marker"] if node == "circle"]) == 3
+    assert len([node for node in node_data["_marker"] if node == "square"]) == 2
 
 
 def test_removed_bipartite_attr():
@@ -282,7 +280,7 @@ def test_removed_bipartite_attr():
     )
 
     edge_data = figure.renderers[0].edge_renderer.data_source.data
-    node_data = figure.renderers[1].node_renderer.data_source.data
+    node_data = figure.renderers[0].node_renderer.data_source.data
     assert len(edge_data["start"]) == 4
     assert len(node_data["index"]) == 5
 
@@ -440,11 +438,8 @@ def test_keep_property_order_world_graph():
         return_figure=True,
     )
 
-    exp_types = [
-        attr["type"] for node, attr in graph.nodes(data=True) if attr["bipartite"] == 1
-    ]
+    exp_types = [attr["type"] for node, attr in graph.nodes(data=True) if attr["bipartite"] == 1]
 
-    node_data_lv1 = figure.renderers[2].node_renderer.data_source.data
-    types = node_data_lv1["type"]
-
+    node_data = figure.renderers[0].node_renderer.data_source.data
+    types = [data for data, node in zip(node_data["type"], node_data["bipartite"]) if node == 1]
     assert exp_types == types
